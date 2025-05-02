@@ -13,4 +13,8 @@ public class LoginResponse {
         this.token = token;
         this.expiresIn = expiresIn;
     }
+    @Override
+    public String toString() {
+        return "LoginResponse{token='" + token + "', expiresIn=" + expiresIn + "}";
+    }
 }

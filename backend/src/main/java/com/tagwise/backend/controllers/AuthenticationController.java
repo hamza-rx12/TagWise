@@ -1,6 +1,7 @@
 package com.tagwise.backend.controllers;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tagwise.backend.dto.LoginUserDto;
 import com.tagwise.backend.dto.RegisterUserDto;
 import com.tagwise.backend.dto.VerifyUserDto;
@@ -11,8 +12,11 @@ import com.tagwise.backend.services.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RequestMapping("/auth")
 @RestController
+@CrossOrigin(origins = {"http://localhost:5173", "https://app-backend.com"})
 public class AuthenticationController {
     private final JwtService jwtService;
 
@@ -24,18 +28,38 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
-        User registeredUser = authenticationService.signup(registerUserDto);
-        return ResponseEntity.ok(registeredUser);
+    public ResponseEntity<?> register(@RequestBody RegisterUserDto registerUserDto) {
+        try {
+            User registeredUser = authenticationService.signup(registerUserDto);
+            // Inclure le code de vérification dans la réponse
+            return ResponseEntity.ok(Map.of(
+                "message", "User registered successfully. Please verify your email.",
+                "verificationCode", registeredUser.getVerificationCode()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto){
+    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
+        System.out.println("Authenticated User: " + authenticatedUser);
         String jwtToken = jwtService.generateToken(authenticatedUser);
+        System.out.println("JWT Token: " + jwtToken);
         LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
+        System.out.println("Login Response: " + loginResponse);
+        // Vérifier la sérialisation manuellement
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            System.out.println("JSON Response: " + mapper.writeValueAsString(loginResponse));
+        } catch (Exception e) {
+            System.out.println("Serialization Error: " + e.getMessage());
+        }
         return ResponseEntity.ok(loginResponse);
     }
+
+
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {

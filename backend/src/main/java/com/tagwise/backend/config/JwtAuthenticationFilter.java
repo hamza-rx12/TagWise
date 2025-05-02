@@ -45,7 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.length() <= 7) {
+            logger.warn("Invalid Authorization header");
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,6 +59,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (userEmail != null && authentication == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                if (!userDetails.isEnabled()) {
+                    logger.warn("User is disabled: " + userEmail);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -73,6 +79,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
+            // Ajoutez un journal pour capturer l'exception
+            logger.error("Error occurred during JWT authentication", exception);
+
+            // Résolvez l'exception avec le handler
             handlerExceptionResolver.resolveException(request, response, null, exception);
         }
     }

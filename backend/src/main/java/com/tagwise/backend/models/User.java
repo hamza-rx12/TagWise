@@ -13,12 +13,11 @@ import java.util.Collection;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
-
-
 @Entity
-
 public class User implements UserDetails {
+    public User(){
+
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,6 +63,7 @@ public class User implements UserDetails {
     }
 
 
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
@@ -87,6 +87,94 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public LocalDateTime getVerificationCodeExpiresAt() {
+        return verificationCodeExpiresAt;
+    }
+
+    public void setVerificationCodeExpiresAt(LocalDateTime verificationCodeExpiresAt) {
+        this.verificationCodeExpiresAt = verificationCodeExpiresAt;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+    @Override
+    public String toString() {
+        return "User{userId=" + userId + ", email=" + email + ", username=" + username + "}";
     }
 }
 
