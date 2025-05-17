@@ -17,6 +17,9 @@ export default {
                     600: 'oklch(60% 0.118 184.704)',
                 },
             },
+            animation: {
+                'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+    }
         },
     },
     plugins: [],

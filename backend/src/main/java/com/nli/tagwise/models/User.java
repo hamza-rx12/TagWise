@@ -20,7 +20,7 @@ import lombok.Setter;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+    private Long id;
     private String firstName;
     private String lastName;
     @Email
@@ -34,6 +34,12 @@ public class User {
     private String password;
 
     private Boolean enabled;
+
+    @Column(nullable = true)
+    private Double spamScore; // For spam detection (0 to 1)
+
+    @Column(nullable = true)
+    private Double qualityMetric; // For quality assessment (0 to 1)
 
     public Boolean isEnabled() {
         return enabled;
