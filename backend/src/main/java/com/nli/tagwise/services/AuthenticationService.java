@@ -22,12 +22,14 @@ import com.nli.tagwise.repository.IUserRepo;
 
 import jakarta.mail.MessagingException;
 
+// cette classe sert pour gerer l'authentification de l'utilisateur
 @Service
 public class AuthenticationService {
     private final IUserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    // c;est un service pour generer et verifier le code de verification en utilisant redis
     private final RedisVerificationService redisVerificationService;
 
     public AuthenticationService(
@@ -52,6 +54,7 @@ public class AuthenticationService {
         user.setGender(Enum.valueOf(Gender.class, input.getGender()));
         user.setPassword(passwordEncoder.encode(input.getPassword()));
         user.setEnabled(false);
+        user.setDeleted(false); // Explicitly set deleted to false for new users
         User tmp = userRepo.save(user);
         String code = redisVerificationService.generateAndStoreCode(tmp.getId());
         // sendVerificationEmail(user);
@@ -59,13 +62,21 @@ public class AuthenticationService {
     }
 
     public UserDetailsImpl authenticate(SignInDto input) {
+        // First check if user exists and is not deleted
+        User user = userRepo.findByEmail(input.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        
+        // Check if user is deleted
+        if (user.isDeleted() != null && user.isDeleted()) {
+            throw new UserNotFoundException("User not found");
+        }
+        
+        // Then proceed with authentication
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         input.getEmail(),
                         input.getPassword()));
 
-        User user = userRepo.findByEmail(input.getEmail())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
         return new UserDetailsImpl(user);
     }
 
@@ -73,6 +84,12 @@ public class AuthenticationService {
         Optional<User> optionalUser = userRepo.findByEmail(input.getEmail());
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
+            
+            // Check if user is deleted
+            if (user.isDeleted() != null && user.isDeleted()) {
+                throw new UserNotFoundException("User not found");
+            }
+            
             if (redisVerificationService.isCodeValid(user.getId(), input.getVerificationCode())) {
                 user.setEnabled(true);
                 userRepo.save(user);
@@ -88,6 +105,12 @@ public class AuthenticationService {
         Optional<User> optionalUser = userRepo.findByEmail(email);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
+            
+            // Check if user is deleted
+            if (user.isDeleted() != null && user.isDeleted()) {
+                throw new UserNotFoundException("User not found");
+            }
+            
             if (user.isEnabled()) {
                 throw new AlreadyVerifiedException("Account is already verified");
             }
@@ -128,5 +151,4 @@ public class AuthenticationService {
     // int code = random.nextInt(900000) + 100000;
     // return String.valueOf(code);
     // }
-
 }

@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { authenticatedFetch } from '../utils/api';
+import { authenticatedFetch } from '../../utils/api';
 import { useState } from 'react';
 
 type DatasetFormData = {
@@ -19,7 +19,7 @@ export default function CreateDataset() {
   const onSubmit = async (data: DatasetFormData) => {
     setIsLoading(true);
     setError('');
-    
+
     try {
       const formData = new FormData();
       formData.append('file', data.file[0]);
@@ -51,7 +51,7 @@ export default function CreateDataset() {
   return (
     <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Create New Dataset</h2>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
           {error}
@@ -71,13 +71,13 @@ export default function CreateDataset() {
             <p className="text-xs text-gray-500">CSV, JSON, or TXT (Max 10MB)</p>
             <input
               type="file"
-              {...register('file', { 
+              {...register('file', {
                 required: 'File is required',
                 validate: {
-                  fileSize: (files) => 
+                  fileSize: (files) =>
                     files[0]?.size <= 1000 * 1024 * 1024 || 'Max file size is 10MB',
-                  fileType: (files) => 
-                    ['text/csv', 'application/json', 'text/plain'].includes(files[0]?.type) || 
+                  fileType: (files) =>
+                    ['text/csv', 'application/json', 'text/plain'].includes(files[0]?.type) ||
                     'Only CSV, JSON, or TXT files allowed'
                 }
               })}
@@ -85,8 +85,8 @@ export default function CreateDataset() {
               id="file-upload"
               accept=".csv,.json,.txt"
             />
-            <label 
-              htmlFor="file-upload" 
+            <label
+              htmlFor="file-upload"
               className="mt-3 px-4 py-2 bg-teal-100 text-teal-700 rounded-lg cursor-pointer hover:bg-teal-200 transition-colors"
             >
               Select File
@@ -102,7 +102,7 @@ export default function CreateDataset() {
           <label className="block text-sm font-medium text-gray-700 mb-1">Dataset Name*</label>
           <input
             type="text"
-            {...register('name', { 
+            {...register('name', {
               required: 'Name is required',
               minLength: {
                 value: 3,
@@ -122,10 +122,10 @@ export default function CreateDataset() {
           <label className="block text-sm font-medium text-gray-700 mb-1">Classes (separated by semicolons)*</label>
           <input
             type="text"
-            {...register('classes', { 
+            {...register('classes', {
               required: 'Classes are required',
-              validate: (value) => 
-                value.split(';').filter(Boolean).length >= 2 || 
+              validate: (value) =>
+                value.split(';').filter(Boolean).length >= 2 ||
                 'At least 2 classes required'
             })}
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"

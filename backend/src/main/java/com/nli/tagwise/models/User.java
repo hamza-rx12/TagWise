@@ -20,7 +20,7 @@ import lombok.Setter;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long Id;
     private String firstName;
     private String lastName;
     @Email
@@ -35,11 +35,17 @@ public class User {
 
     private Boolean enabled;
 
-    @Column(nullable = true)
-    private Double spamScore; // For spam detection (0 to 1)
+    @Column(name = "deleted", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean deleted = false;
 
-    @Column(nullable = true)
-    private Double qualityMetric; // For quality assessment (0 to 1)
+    public Boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
+    }
+
 
     public Boolean isEnabled() {
         return enabled;

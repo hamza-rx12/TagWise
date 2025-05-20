@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { getUserRole, getUserEmail, getUserId, setToken, removeToken, isTokenValid } from '../utils/jwt';
-
+// dans ce code on a la creation d'un contexte d'authentification qui va nous permettre de gerer l'authentification de l'utilisateur dans notre application
 // Types
 type User = {
     id: string;
@@ -17,7 +17,7 @@ type SignupData = {
     gender: "MALE" | "FEMALE";
     password: string;
 };
-
+// cette interface est utilisée pour définir le type de données que l'on va envoyer au serveur lors de l'inscription d'un nouvel utilisateur
 type AuthContextType = {
     user: User | null;
     isAuthenticated: boolean;
@@ -40,8 +40,10 @@ const ENDPOINTS = {
 };
 
 // Context
+// on cree le contexte d'authentification qui va nous permettre de gerer l'authentification de l'utilisateur dans notre application
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+// ce composant permet de gerer l'etat d'authentification 
+// donne le contexte d'authentification a tous les composants de l'application
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);

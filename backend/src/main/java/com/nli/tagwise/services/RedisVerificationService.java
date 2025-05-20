@@ -8,9 +8,12 @@ import com.nli.tagwise.custom.CodeExpiredException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+// cette classe s'occupe de la gestion des codes de verif
+
 @Service
 public class RedisVerificationService {
 
+    // c'est un template qui permet d'interagir avec redis database
     private final StringRedisTemplate redisTemplate;
     private static final String PREFIX = "verify:"; // Redis key prefix
 

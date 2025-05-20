@@ -1,79 +1,120 @@
 package com.nli.tagwise.controllers;
 
-import com.nli.tagwise.dto.AssignAnnotatorDto;
-import com.nli.tagwise.dto.SignUpDto;
-import com.nli.tagwise.dto.AnnotatorResponseDto;
-import com.nli.tagwise.models.User;
-import com.nli.tagwise.services.AnnotatorService;
-import com.nli.tagwise.services.TaskService;
-import org.springframework.http.HttpStatus;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.nli.tagwise.dto.SignUpDto;  // Reusing existing DTO
+import com.nli.tagwise.models.Gender;
+import com.nli.tagwise.models.Role;
+import com.nli.tagwise.models.User;
+import com.nli.tagwise.repository.IUserRepo;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/admin/annotators")
+@RequestMapping("/api/v1/annotators")
+@PreAuthorize("hasRole('ROLE_ADMIN')")  // Only admins can access this controller
+@RequiredArgsConstructor
 public class AnnotatorController {
-    private final AnnotatorService annotatorService;
-    private final TaskService taskService;
 
-    public AnnotatorController(AnnotatorService annotatorService, TaskService taskService) {
-        this.annotatorService = annotatorService;
-        this.taskService = taskService;
-    }
+    private final IUserRepo userRepo;
+    private final PasswordEncoder passwordEncoder;
 
-
-    @PostMapping("/users/validate/{userId}")
-    public ResponseEntity<User> validateUser(@PathVariable Long userId) {
-        User validatedUser = annotatorService.validateUser(userId);
-        return ResponseEntity.ok(validatedUser);
-    }
-    @PostMapping("/add")
-    public ResponseEntity<AnnotatorResponseDto> addAnnotator(@RequestBody SignUpDto dto) {
-        User annotator = annotatorService.addAnnotator(dto);
-        AnnotatorResponseDto response = new AnnotatorResponseDto(
-                annotator.getId(), annotator.getFirstName(), annotator.getLastName(),
-                annotator.getEmail(), annotator.getRole(), annotator.getGender(),
-                annotator.isEnabled(), annotator.getSpamScore(), annotator.getQualityMetric()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
+    /**
+     * Get all annotators (users with ROLE_USER)
+     */
     @GetMapping
-    public ResponseEntity<List<AnnotatorResponseDto>> listAnnotators() {
-        List<AnnotatorResponseDto> response = annotatorService.listAnnotators().stream()
-                .map(annotator -> new AnnotatorResponseDto(
-                        annotator.getId(), annotator.getFirstName(), annotator.getLastName(),
-                        annotator.getEmail(), annotator.getRole(), annotator.getGender(),
-                        annotator.isEnabled(), annotator.getSpamScore(), annotator.getQualityMetric()
-                ))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<User>> getAllAnnotators() {
+        List<User> annotators = userRepo.findByRoleAndDeletedFalse(Role.ROLE_USER);
+        return ResponseEntity.ok(annotators);
     }
 
-    @PostMapping("/assign")
-    public ResponseEntity<Void> assignAnnotator(@RequestBody AssignAnnotatorDto dto) {
-        taskService.assignAnnotators(dto);
-        return ResponseEntity.status(HttpStatus.OK).build();
+    /**
+     * Get a specific annotator by ID
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getAnnotatorById(@PathVariable Long id) {
+        return userRepo.findById(id)
+                .filter(user -> user.getRole() == Role.ROLE_USER)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/remove/{datasetId}/{annotatorId}")
-    public ResponseEntity<Void> removeAnnotator(@PathVariable Long datasetId, @PathVariable Long annotatorId) {
-        taskService.removeAnnotator(datasetId, annotatorId);
-        return ResponseEntity.status(HttpStatus.OK).build();
+    /**
+     * Update an annotator's information
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateAnnotator(
+            @PathVariable Long id,
+            @RequestBody SignUpDto updateDto) {
+        
+        return userRepo.findById(id)
+                .filter(user -> user.getRole() == Role.ROLE_USER)
+                .map(user -> {
+                    // Update fields if provided
+                    if (updateDto.getFirstName() != null) {
+                        user.setFirstName(updateDto.getFirstName());
+                    }
+                    
+                    if (updateDto.getLastName() != null) {
+                        user.setLastName(updateDto.getLastName());
+                    }
+                    
+                    if (updateDto.getGender() != null) {
+                        try {
+                            user.setGender(Gender.valueOf(updateDto.getGender()));
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid gender value");
+                        }
+                    }
+                    
+                    // Update password if provided
+                    if (updateDto.getPassword() != null && !updateDto.getPassword().isEmpty()) {
+                        user.setPassword(passwordEncoder.encode(updateDto.getPassword()));
+                    }
+                    
+                    // Don't update email/role to maintain annotator status
+                    
+                    return ResponseEntity.ok(userRepo.save(user));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/spam/{annotatorId}")
-    public ResponseEntity<Void> detectSpam(@PathVariable Long annotatorId) {
-        annotatorService.detectSpam(annotatorId);
-        return ResponseEntity.status(HttpStatus.OK).build();
+    /**
+     * Delete an annotator
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAnnotator(@PathVariable Long id) {
+        return userRepo.findById(id)
+                .filter(user -> user.getRole() == Role.ROLE_USER)
+                .map(user -> {
+                    // Instead of deleting, mark as deleted
+                    user.setDeleted(true);
+                    userRepo.save(user);
+                    return ResponseEntity.noContent().<Void>build();
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/quality/{annotatorId}")
-    public ResponseEntity<Void> calculateQualityMetric(@PathVariable Long annotatorId) {
-        annotatorService.calculateQualityMetric(annotatorId);
-        return ResponseEntity.status(HttpStatus.OK).build();
+    /**
+     * Enable or disable an annotator's account
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Void> updateAnnotatorStatus(
+            @PathVariable Long id,
+            @RequestParam boolean enabled) {
+        
+        return userRepo.findById(id)
+                .filter(user -> user.getRole() == Role.ROLE_USER)
+                .map(user -> {
+                    user.setEnabled(enabled);
+                    userRepo.save(user);
+                    return ResponseEntity.ok().<Void>build();
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

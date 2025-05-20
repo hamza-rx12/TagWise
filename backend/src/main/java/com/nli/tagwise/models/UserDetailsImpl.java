@@ -18,6 +18,7 @@ public class UserDetailsImpl implements UserDetails {
     private User user;
     private Collection<? extends GrantedAuthority> authorities;
 
+    // ce constructeur sert pour la creation d'une liste des autorites en se basant sur le role de l'utilisateur 
     public UserDetailsImpl(User user) {
         this.user = user;
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()));
@@ -44,6 +45,7 @@ public class UserDetailsImpl implements UserDetails {
         return true;
     }
 
+    // cette methode sert pour verifier si l'utilisateur est actif ou non
     @Override
     public boolean isEnabled() {
         return user.isEnabled();

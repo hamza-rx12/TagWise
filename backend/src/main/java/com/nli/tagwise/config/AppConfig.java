@@ -28,7 +28,7 @@ public class AppConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final IUserRepo userRepo;
-
+    // inhjection des dépendances
     public AppConfig(
             // IUserRepo userRepo,
             UserDetailsServiceImpl userDetailsService,
@@ -37,12 +37,14 @@ public class AppConfig {
         this.userDetailsService = userDetailsService;
         this.userRepo = userRepo;
     }
-
+    
+    // cette classe sert pour configuration de la securite de l'application
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService)
                 .passwordEncoder(passwordEncoder());
     }
 
+    // initialisation de l'utilisateur admin lors du demarage de l'application
     @Bean
     CommandLineRunner initAdmin() {
         return args -> {
@@ -82,6 +84,7 @@ public class AppConfig {
     // .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     // }
     // Java
+    // setting up the configurations needed for spring security
     @Bean
     public org.springframework.security.core.userdetails.UserDetailsService userDetailsService() {
         return userDetailsService;
@@ -92,11 +95,13 @@ public class AppConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // se bean sert pour la gestion des requetes d'authentification
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    // se bean sert pour la validation des coordonnees des utilisateurs
     @Bean
     AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();

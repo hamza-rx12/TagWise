@@ -18,6 +18,9 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
+// cette classe s'occupe de la gestion des tokens JWT pour les operations d'authentification et d'autorisation
+
+// cette classe sert pour la creation la validation et l'extraction des informations du token JWT
 @Service
 public class JwtService {
 
@@ -33,6 +36,8 @@ public class JwtService {
     ///////////////////////////////////////////////////////////
     ///////////////////// Mane Thing //////////////////////////
     ///////////////////////////////////////////////////////////
+    /// 
+    // cette methode sert pour extraire l'email du token JWT (claim = info)
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }

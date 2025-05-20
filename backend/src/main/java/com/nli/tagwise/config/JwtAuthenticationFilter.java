@@ -21,13 +21,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+// cette classe sert pour intercepter les requetes http et verifier si l'utilisateur est authentifié
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final HandlerExceptionResolver handlerExceptionResolver;
-
+    // service for JWT operations (like token generation, validation, etc.)
     private final JwtService jwtService;
+    // service for loading user details from the database
     private final UserDetailsServiceImpl userDetailsService;
 
     public JwtAuthenticationFilter(
@@ -39,6 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
+    // Implementation de la methode do filter le core de l'interception des requetes
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -57,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); // Null
                                                                                                     // authentification
-
+            // cette implementation sera executee si l'utilisateur n'est pas authentifié et l'email est extrait depuis le token
             if (userEmail != null && authentication == null) {
                 UserDetailsImpl userDetails = (UserDetailsImpl) this.userDetailsService.loadUserByUsername(userEmail);
 
