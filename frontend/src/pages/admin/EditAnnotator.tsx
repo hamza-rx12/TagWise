@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { authenticatedFetch } from "../../utils/api";
+import { authenticatedFetch } from "../../utils/api.ts";
 
 type EditAnnotatorFormData = {
     firstName: string;

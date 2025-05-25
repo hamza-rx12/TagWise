@@ -1,13 +1,14 @@
 // components/AdminSidebar.tsx
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import * as React from "react";
 
 interface AdminSidebarProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
   isSidebarOpen: boolean;
-  setIsSidebarOpen: (open: boolean) => void;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   handleSearch: (e: React.FormEvent) => void;
@@ -28,7 +29,7 @@ function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen, isSidebarOpen, se
     localStorage.setItem('sidebarOpen', isSidebarOpen.toString());
   }, [isSidebarOpen]);
 
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+  const toggleSidebar = () => setIsSidebarOpen((prev: boolean) => !prev);
 
   return (
     <div
@@ -83,6 +84,8 @@ function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen, isSidebarOpen, se
             )}
           </div>
         )}
+
+
 
         {/* Search Bar */}
         {isSidebarOpen && (
@@ -172,6 +175,17 @@ function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen, isSidebarOpen, se
               />
             </svg>
             {isSidebarOpen && <span className="ml-2">Calendar</span>}
+          </Link>
+
+          {/* Profile Link */}
+          <Link
+            to="/admin/profile"
+            className={`text-sm font-medium text-gray-700 py-2 ${isSidebarOpen ? 'px-2' : 'px-0 justify-center'} hover:bg-teal-500 hover:text-white hover:scale-105 rounded-md transition duration-150 ease-in-out flex items-center`}
+          >
+            <svg className="w-6 h-6 fill-current" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+            {isSidebarOpen && <span className="ml-2">Profile</span>}
           </Link>
           <button
             onClick={logout}

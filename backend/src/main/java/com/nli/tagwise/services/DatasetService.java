@@ -1,6 +1,5 @@
 package com.nli.tagwise.services;
 
-import com.nli.tagwise.dto.DatasetDto;
 import com.nli.tagwise.models.Dataset;
 import com.nli.tagwise.models.DatasetAnnotator;
 import com.nli.tagwise.models.Task;
@@ -9,14 +8,12 @@ import com.nli.tagwise.repository.IDatasetRepo;
 import com.nli.tagwise.repository.ITaskRepo;
 import java.nio.file.Path;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,19 +30,19 @@ public class DatasetService {
         this.datasetAnnotatorRepo = datasetAnnotatorRepo;
     }
 
-   /*    public Dataset createDataset(DatasetDto dto) {
-        Dataset dataset = new Dataset();
-        dataset.setName(dto.getName());
-        dataset.setDescription(dto.getDescription());
-        dataset.setClasses(dto.getClasses());
-        dataset.setFilePath(dto.getFilePath());
-        return datasetRepo.save(dataset);
-    }*/
-
-
+    /*
+     * public Dataset createDataset(DatasetDto dto) {
+     * Dataset dataset = new Dataset();
+     * dataset.setName(dto.getName());
+     * dataset.setDescription(dto.getDescription());
+     * dataset.setClasses(dto.getClasses());
+     * dataset.setFilePath(dto.getFilePath());
+     * return datasetRepo.save(dataset);
+     * }
+     */
 
     public Dataset createDataset(MultipartFile file, String name,
-                                 String classes, String description) throws IOException {
+            String classes, String description) throws IOException {
         // 1. Save raw file
         String filePath = saveFile(file);
 
@@ -72,7 +69,6 @@ public class DatasetService {
         return filePath.toString();
     }
 
-
     public List<Dataset> listDatasets() {
         return datasetRepo.findAll();
     }
@@ -83,7 +79,7 @@ public class DatasetService {
     }
 
     public List<Task> getDatasetTasks(Long datasetId) {
-        Dataset dataset = getDatasetDetails(datasetId);
+        // Dataset dataset = getDatasetDetails(datasetId);
         return taskRepo.findAll().stream()
                 .filter(task -> task.getDataset().getId().equals(datasetId))
                 .collect(Collectors.toList());

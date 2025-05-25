@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { getUserRole, getUserEmail, getUserId, setToken, removeToken, isTokenValid } from '../utils/jwt';
+import { getUserRole, getUserEmail, getUserId, setToken, removeToken, isTokenValid, getFirstName, getLastName, getGender } from '../utils/jwt';
 // dans ce code on a la creation d'un contexte d'authentification qui va nous permettre de gerer l'authentification de l'utilisateur dans notre application
 // Types
 type User = {
@@ -8,6 +8,7 @@ type User = {
     firstName: string;
     lastName: string;
     role: string;
+    gender: string;
 };
 
 type SignupData = {
@@ -67,15 +68,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const role = getUserRole();
                 const email = getUserEmail();
                 const userId = getUserId();
+                const firstName = getFirstName();
+                const lastName = getLastName();
+                const gender = getGender();
 
-                if (role && email && userId) {
+                if (role && email && userId && firstName && lastName && gender) {
                     setUserRole(role);
                     setUser({
                         id: userId,
                         email: email,
-                        firstName: '', // These would need to be fetched from an API
-                        lastName: '',  // or included in the JWT payload
-                        role: role
+                        firstName: firstName, // These would need to be fetched from an API
+                        lastName: lastName,  // or included in the JWT payload
+                        role: role,
+                        gender: gender
                     });
                     setIsAuthenticated(true);
                 } else {

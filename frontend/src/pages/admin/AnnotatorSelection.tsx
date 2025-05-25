@@ -1,6 +1,6 @@
 // pages/AnnotatorSelection.tsx
 import { useState, useEffect } from 'react';
-import { authenticatedFetch } from '../../utils/api';
+import { authenticatedFetch } from '../../utils/api.ts';
 
 // Define the Annotator type
 type Annotator = {
@@ -145,8 +145,8 @@ function AnnotatorSelection() {
                 onClick={handleSubmit}
                 disabled={selectedAnnotators.length === 0}
                 className={`px-6 py-3 rounded-lg text-white font-medium flex items-center ${selectedAnnotators.length > 0
-                    ? 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                    : 'bg-gray-400 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                  : 'bg-gray-400 cursor-not-allowed'
                   } transition-all duration-200`}
               >
                 <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -279,7 +279,7 @@ function AnnotatorSelection() {
           </div>
         )}
       </div>
-      <style jsx>{`
+      <style >{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }

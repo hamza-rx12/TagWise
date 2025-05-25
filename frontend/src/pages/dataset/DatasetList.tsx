@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authenticatedFetch } from '../../utils/api';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
 
 type Dataset = {
@@ -13,7 +13,7 @@ type Dataset = {
 };
 
 export default function DatasetList() {
-  const { user, logout } = useAuth();
+  // const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,7 @@ export default function DatasetList() {
     const fetchDatasets = async () => {
       try {
         setLoading(true);
-        const response = await authenticatedFetch('/api/admin/datasets');
+        const response = await authenticatedFetch('http://localhost:8080/api/admin/datasets/list');
         if (!response.ok) throw new Error('Failed to fetch datasets');
         const data = await response.json();
         setDatasets(data);
@@ -199,7 +199,7 @@ export default function DatasetList() {
           </div>
         </div>
       </div>
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }

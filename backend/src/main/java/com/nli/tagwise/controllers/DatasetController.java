@@ -2,7 +2,6 @@ package com.nli.tagwise.controllers;
 
 import com.nli.tagwise.dto.AnnotatorDto;
 import com.nli.tagwise.dto.DatasetDetailsDto;
-import com.nli.tagwise.dto.DatasetDto;
 import com.nli.tagwise.dto.DatasetListDto;
 import com.nli.tagwise.dto.TextPairDto;
 import com.nli.tagwise.models.Dataset;
@@ -10,13 +9,11 @@ import com.nli.tagwise.models.DatasetAnnotator;
 import com.nli.tagwise.models.Task;
 import com.nli.tagwise.repository.ITaskRepo;
 import com.nli.tagwise.services.DatasetService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,13 +42,13 @@ public class DatasetController {
                     file,
                     name,
                     classes,
-                    description
-            );
+                    description);
             return ResponseEntity.ok(dataset);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
         }
     }
+
     // DatasetController.java
     @GetMapping("/list")
     public ResponseEntity<List<DatasetListDto>> listDatasetDtos() {
@@ -63,8 +60,7 @@ public class DatasetController {
                         dataset.getName(),
                         dataset.getCompletionPercentage(),
                         dataset.getClasses(),
-                        dataset.getDescription()
-                ))
+                        dataset.getDescription()))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -90,13 +86,12 @@ public class DatasetController {
                 .collect(Collectors.toList()));
 
         // Get assigned annotators
-        Object ITaskRepo;
+        // Object ITaskRepo;
         response.setAssignedAnnotators(dataset.getAnnotators().stream()
                 .map(da -> new AnnotatorDto(
                         da.getAnnotator().getId(),
                         da.getAnnotator().getFirstName() + " " + da.getAnnotator().getLastName(),
-                        (int) taskRepo.countByDatasetAndAnnotatorAndCompleted(dataset, da.getAnnotator(), true)
-                ))
+                        (int) taskRepo.countByDatasetAndAnnotatorAndCompleted(dataset, da.getAnnotator(), true)))
                 .collect(Collectors.toList()));
 
         return ResponseEntity.ok(response);

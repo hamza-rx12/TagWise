@@ -21,7 +21,8 @@ public class TaskService {
     private final IUserRepo userRepo;
     private final IDatasetAnnotatorRepo datasetAnnotatorRepo;
 
-    public TaskService(ITaskRepo taskRepo, IDatasetRepo datasetRepo, IUserRepo userRepo, IDatasetAnnotatorRepo datasetAnnotatorRepo) {
+    public TaskService(ITaskRepo taskRepo, IDatasetRepo datasetRepo, IUserRepo userRepo,
+            IDatasetAnnotatorRepo datasetAnnotatorRepo) {
         this.taskRepo = taskRepo;
         this.datasetRepo = datasetRepo;
         this.userRepo = userRepo;
@@ -62,8 +63,8 @@ public class TaskService {
     public void removeAnnotator(Long datasetId, Long annotatorId) {
         Dataset dataset = datasetRepo.findById(datasetId)
                 .orElseThrow(() -> new IllegalArgumentException("Dataset not found"));
-        User annotator = userRepo.findById(annotatorId)
-                .orElseThrow(() -> new IllegalArgumentException("Annotator not found"));
+        // User annotator = userRepo.findById(annotatorId)
+        // .orElseThrow(() -> new IllegalArgumentException("Annotator not found"));
 
         DatasetAnnotator datasetAnnotator = datasetAnnotatorRepo.findByDataset(dataset).stream()
                 .filter(da -> da.getAnnotator().getId().equals(annotatorId))

@@ -6,21 +6,28 @@ import Signup from './pages/Signup';
 import Verification from './pages/Verification';
 import AnnotatorHome from './pages/AnnotatorHome';
 import AdminHome from './pages/AdminHome';
-import AnnotatorsManagement from './pages/annotators_management/AnnotatorsManagement';
-import EditAnnotator from './pages/annotators_management/EditAnnotator';
-import Dashboard from './pages/annotators_management/Dashboard';
-import Reports from './pages/annotators_management/Reports';
-import Messages from './pages/annotators_management/Messages';
-import Calendar from './pages/annotators_management/Calendar';
+import AnnotatorsManagement from './pages/admin/AnnotatorsManagement.tsx';
+import EditAnnotator from './pages/admin/EditAnnotator.tsx';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminReports from './pages/admin/AdminReports';
+import AdminMessages from './pages/admin/AdminMessages';
+import AdminCalendar from './pages/admin/AdminCalendar';
+import AnnotatorReports from './pages/annotator/AnnotatorReports';
+import AnnotatorMessages from './pages/annotator/AnnotatorMessages';
+import AnnotatorCalendar from './pages/annotator/AnnotatorCalendar';
 import Unauthorized from './pages/Unauthorized';
 import NotFound from './pages/NotFound';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
-import AnnotatorSelection from './pages/annotators_management/AnnotatorSelection';
+import AnnotatorSelection from './pages/admin/AnnotatorSelection.tsx';
 import DatasetList from './pages/dataset/DatasetList';
 import CreateDataset from './pages/dataset/CreateDataset';
 import DatasetDetails from './pages/dataset/DatasetDetailsView';
 import AssignAnnotators from './pages/dataset/AssignAnnotators';
+import AnnotatorTasks from './pages/annotator/AnnotatorTasks.tsx';
+import AnnotatorProfile from './pages/annotator/AnnotatorProfile';
+import AnnotatorDashboard from './pages/annotator/AnnotatorDashboard';
+import AdminProfile from './pages/admin/AdminProfile';
 
 function App() {
   return (
@@ -74,7 +81,7 @@ function App() {
               path="/admin/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
-                  <Dashboard />
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />
@@ -82,7 +89,7 @@ function App() {
               path="/admin/reports"
               element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
-                  <Reports />
+                  <AdminReports />
                 </ProtectedRoute>
               }
             />
@@ -90,7 +97,7 @@ function App() {
               path="/admin/messages"
               element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
-                  <Messages />
+                  <AdminMessages />
                 </ProtectedRoute>
               }
             />
@@ -98,7 +105,7 @@ function App() {
               path="/admin/calendar"
               element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
-                  <Calendar />
+                  <AdminCalendar />
                 </ProtectedRoute>
               }
             />
@@ -141,6 +148,62 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
                   <AssignAnnotators />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotator/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_USER']}>
+                  <AnnotatorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotator/tasks"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_USER']}>
+                  <AnnotatorTasks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotator/profile"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_USER']}>
+                  <AnnotatorProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotator/messages"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_USER']}>
+                  <AnnotatorMessages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotator/calendar"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_USER']}>
+                  <AnnotatorCalendar />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotator/reports"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_USER']}>
+                  <AnnotatorReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/profile"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+                  <AdminProfile />
                 </ProtectedRoute>
               }
             />

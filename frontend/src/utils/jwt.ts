@@ -3,8 +3,11 @@ import { jwtDecode } from 'jwt-decode';
 type JWTPayload = {
     sub: string;      // user email
     role: string;     // user role
+    firstName: string;
+    lastName: string;
     exp: number;      // token expiration time
     userId: string;   // user id
+    gender: string;   // user gender
 };
 
 // Immediately decode and print the token
@@ -16,6 +19,9 @@ if (token) {
             email: decoded.sub,
             role: decoded.role,
             userId: decoded.userId,
+            firstName: decoded.firstName,
+            lastName: decoded.lastName,
+            gender: decoded.gender,
             expiresAt: new Date(decoded.exp * 1000).toLocaleString(),
             raw: decoded
         });
@@ -79,6 +85,34 @@ export const getUserRole = (): string | null => {
     }
 };
 
+export const getFirstName = (): string | null => {
+    const token = getToken();
+    if (!token) return null;
+
+    try {
+        const decoded = jwtDecode<JWTPayload>(token);
+        console.log('Decoded firstName from token:', decoded.firstName);
+        return decoded.firstName;
+    } catch (error) {
+        console.error('Error decoding firstName from token:', error);
+        return null;
+    }
+};
+
+export const getLastName = (): string | null => {
+    const token = getToken();
+    if (!token) return null;
+
+    try {
+        const decoded = jwtDecode<JWTPayload>(token);
+        console.log('Decoded lastName from token:', decoded.lastName);
+        return decoded.lastName;
+    } catch (error) {
+        console.error('Error decoding lastName from token:', error);
+        return null;
+    }
+};
+
 export const getUserEmail = (): string | null => {
     const token = getToken();
     if (!token) return null;
@@ -107,6 +141,20 @@ export const getUserId = (): string | null => {
     }
 };
 
+export const getGender = (): string | null => {
+    const token = getToken();
+    if (!token) return null;
+
+    try {
+        const decoded = jwtDecode<JWTPayload>(token);
+        console.log('Decoded gender from token:', decoded.gender);
+        return decoded.gender;
+    } catch (error) {
+        console.error('Error decoding gender from token:', error);
+        return null;
+    }
+};
+
 // Debug function to print decoded token
 export const debugToken = () => {
     const token = getToken();
@@ -121,6 +169,9 @@ export const debugToken = () => {
             email: decoded.sub,
             role: decoded.role,
             userId: decoded.userId,
+            firstName: decoded.firstName,
+            lastName: decoded.lastName,
+            gender: decoded.gender,
             expiresAt: new Date(decoded.exp * 1000).toLocaleString(),
             raw: decoded
         });

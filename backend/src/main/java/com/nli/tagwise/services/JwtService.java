@@ -36,7 +36,7 @@ public class JwtService {
     ///////////////////////////////////////////////////////////
     ///////////////////// Mane Thing //////////////////////////
     ///////////////////////////////////////////////////////////
-    /// 
+    ///
     // cette methode sert pour extraire l'email du token JWT (claim = info)
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -51,6 +51,9 @@ public class JwtService {
                 .findFirst()
                 .orElse(null));
         claims.put("userId", userDetails.getUser().getId());
+        claims.put("firstName", userDetails.getUser().getFirstName());
+        claims.put("lastName", userDetails.getUser().getLastName());
+        claims.put("gender", userDetails.getUser().getGender());
         claims.put("exp", System.currentTimeMillis() + expiration);
 
         return generateToken(claims, userDetails);

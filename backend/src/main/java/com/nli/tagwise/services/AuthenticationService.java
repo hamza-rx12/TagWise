@@ -29,7 +29,8 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
-    // c;est un service pour generer et verifier le code de verification en utilisant redis
+    // c;est un service pour generer et verifier le code de verification en
+    // utilisant redis
     private final RedisVerificationService redisVerificationService;
 
     public AuthenticationService(
@@ -65,12 +66,12 @@ public class AuthenticationService {
         // First check if user exists and is not deleted
         User user = userRepo.findByEmail(input.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
-        
+
         // Check if user is deleted
         if (user.isDeleted() != null && user.isDeleted()) {
             throw new UserNotFoundException("User not found");
         }
-        
+
         // Then proceed with authentication
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -84,12 +85,12 @@ public class AuthenticationService {
         Optional<User> optionalUser = userRepo.findByEmail(input.getEmail());
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            
+
             // Check if user is deleted
             if (user.isDeleted() != null && user.isDeleted()) {
                 throw new UserNotFoundException("User not found");
             }
-            
+
             if (redisVerificationService.isCodeValid(user.getId(), input.getVerificationCode())) {
                 user.setEnabled(true);
                 userRepo.save(user);
@@ -105,12 +106,12 @@ public class AuthenticationService {
         Optional<User> optionalUser = userRepo.findByEmail(email);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            
+
             // Check if user is deleted
             if (user.isDeleted() != null && user.isDeleted()) {
                 throw new UserNotFoundException("User not found");
             }
-            
+
             if (user.isEnabled()) {
                 throw new AlreadyVerifiedException("Account is already verified");
             }
@@ -122,6 +123,7 @@ public class AuthenticationService {
         }
     }
 
+    @SuppressWarnings("unused")
     private void sendVerificationEmail(User user) throws MessagingException {
         String subject = "Account Verification";
         String verificationCode = "VERIFICATION CODE " + redisVerificationService.getCode(user.getId());

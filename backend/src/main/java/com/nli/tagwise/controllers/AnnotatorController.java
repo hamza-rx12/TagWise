@@ -7,7 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import com.nli.tagwise.dto.SignUpDto;  // Reusing existing DTO
+import com.nli.tagwise.dto.SignUpDto; // Reusing existing DTO
 import com.nli.tagwise.models.Gender;
 import com.nli.tagwise.models.Role;
 import com.nli.tagwise.models.User;
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/annotators")
-@PreAuthorize("hasRole('ROLE_ADMIN')")  // Only admins can access this controller
+@PreAuthorize("hasRole('ROLE_ADMIN')") // Only admins can access this controller
 @RequiredArgsConstructor
 public class AnnotatorController {
 
@@ -51,7 +51,7 @@ public class AnnotatorController {
     public ResponseEntity<User> updateAnnotator(
             @PathVariable Long id,
             @RequestBody SignUpDto updateDto) {
-        
+
         return userRepo.findById(id)
                 .filter(user -> user.getRole() == Role.ROLE_USER)
                 .map(user -> {
@@ -59,11 +59,11 @@ public class AnnotatorController {
                     if (updateDto.getFirstName() != null) {
                         user.setFirstName(updateDto.getFirstName());
                     }
-                    
+
                     if (updateDto.getLastName() != null) {
                         user.setLastName(updateDto.getLastName());
                     }
-                    
+
                     if (updateDto.getGender() != null) {
                         try {
                             user.setGender(Gender.valueOf(updateDto.getGender()));
@@ -71,14 +71,14 @@ public class AnnotatorController {
                             throw new IllegalArgumentException("Invalid gender value");
                         }
                     }
-                    
+
                     // Update password if provided
                     if (updateDto.getPassword() != null && !updateDto.getPassword().isEmpty()) {
                         user.setPassword(passwordEncoder.encode(updateDto.getPassword()));
                     }
-                    
+
                     // Don't update email/role to maintain annotator status
-                    
+
                     return ResponseEntity.ok(userRepo.save(user));
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -107,7 +107,7 @@ public class AnnotatorController {
     public ResponseEntity<Void> updateAnnotatorStatus(
             @PathVariable Long id,
             @RequestParam boolean enabled) {
-        
+
         return userRepo.findById(id)
                 .filter(user -> user.getRole() == Role.ROLE_USER)
                 .map(user -> {

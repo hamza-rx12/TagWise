@@ -28,6 +28,7 @@ public class AppConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final IUserRepo userRepo;
+
     // inhjection des dépendances
     public AppConfig(
             // IUserRepo userRepo,
@@ -37,7 +38,7 @@ public class AppConfig {
         this.userDetailsService = userDetailsService;
         this.userRepo = userRepo;
     }
-    
+
     // cette classe sert pour configuration de la securite de l'application
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService)
@@ -51,17 +52,8 @@ public class AppConfig {
             // Check if an admin already exists
             boolean adminExists = userRepo.findByEmail("oumaima@gmail.com").isPresent();
             if (!adminExists) {
-                // Create default admin user
-                // User admin = new User(
-                // "Oumaima",
-                // new BCryptPasswordEncoder().encode("open123"), // Default password: admin123
-                // "Oumaima",
-                // "Atmani",
-                // Gender.FEMALE,
-                // ADMIN_ROLE,
-                // "oumaima@gmail.com"
-                // );
                 User admin = new User();
+                User user = new User();
 
                 admin.setFirstName("Oumaima");
                 admin.setLastName("OT");
@@ -72,6 +64,17 @@ public class AppConfig {
                 admin.setEnabled(true); // Enable the admin account
                 userRepo.save(admin);
                 System.out.println("Admin user created with email: oumaima@gmail.com");
+
+                user.setFirstName("hamza");
+                user.setLastName("al");
+                user.setGender(Gender.MALE);
+                user.setRole(Role.ROLE_USER);
+                user.setEmail("hamza@gmail.com");
+                user.setPassword(new BCryptPasswordEncoder().encode("password"));
+                user.setEnabled(true); // Enable the admin account
+                userRepo.save(user);
+                System.out.println("Annotator user created with email: hamza@gmail.com");
+
             } else {
                 System.out.println("Admin user already exists.");
             }
