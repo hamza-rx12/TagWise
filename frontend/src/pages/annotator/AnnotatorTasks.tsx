@@ -1,15 +1,7 @@
 import { useEffect, useState } from 'react';
 import AnnotatorSidebar from '../../components/AnnotatorSidebar.tsx';
 import * as React from "react";
-
-// Example Task type
-type Task = {
-    id: string;
-    title: string;
-    description: string;
-    status: 'pending' | 'in_progress' | 'completed';
-    dueDate?: string;
-};
+import { annotatorApi, Task } from '../../utils/api';
 
 export default function AnnotatorTasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -20,17 +12,17 @@ export default function AnnotatorTasks() {
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
-        // Replace with your API call
         const fetchTasks = async () => {
             try {
                 setLoading(true);
-                // Example fetch, replace with your real endpoint
-                const response = await fetch('http://localhost:8080/api/v1/annotator/tasks');
-                if (!response.ok) throw new Error('Failed to fetch tasks');
-                const data = await response.json();
+                const data = await annotatorApi.getTasks();
                 setTasks(data);
             } catch (error) {
-                setNotification({ message: 'Failed to load tasks', type: 'error' });
+                console.error('Error fetching tasks:', error);
+                setNotification({ 
+                    message: error instanceof Error ? error.message : 'Failed to load tasks', 
+                    type: 'error' 
+                });
             } finally {
                 setLoading(false);
             }

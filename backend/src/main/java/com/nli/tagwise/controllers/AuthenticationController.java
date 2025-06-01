@@ -78,10 +78,14 @@ public class AuthenticationController {
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(new CustomResponse("Invalid credentials!"));
 
+        } catch (UserNotFoundException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new CustomResponse("User not found!"));
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new CustomResponse("Login Problem!"));
+                    .body(new CustomResponse(e.getClass().getName()));
         }
 
     }

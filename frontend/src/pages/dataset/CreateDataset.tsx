@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { authenticatedFetch } from '../../utils/api';
-import { useState } from 'react';
+import { adminApi } from '../../utils/api';
+import { useState, useEffect } from 'react';
 
 type DatasetFormData = {
   name: string;
@@ -11,10 +11,23 @@ type DatasetFormData = {
 };
 
 export default function CreateDataset() {
-  const { register, handleSubmit, formState: { errors } } = useForm<DatasetFormData>();
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<DatasetFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+
+  // Watch for file changes
+  const fileWatch = watch('file');
   const navigate = useNavigate();
+
+  // Update selectedFileName when file changes
+  useEffect(() => {
+    if (fileWatch && fileWatch.length > 0) {
+      setSelectedFileName(fileWatch[0].name);
+    } else {
+      setSelectedFileName(null);
+    }
+  }, [fileWatch]);
 
   const onSubmit = async (data: DatasetFormData) => {
     setIsLoading(true);
@@ -27,19 +40,10 @@ export default function CreateDataset() {
       formData.append('classes', data.classes);
       if (data.description) formData.append('description', data.description);
 
-      const response = await authenticatedFetch('/api/admin/datasets', {
-        method: 'POST',
-        body: formData,
-        // Headers are automatically set by browser for FormData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Dataset creation failed');
-      }
-
-      const result = await response.json();
-      navigate(`/admin/datasets/${result.id}`);
+      const result = await adminApi.createDataset(formData);
+      console.log(`dataset created with id ${result.id}!!!!!!`);
+      // navigate(`/admin/datasets/${result.id}`);
+      navigate(`/admin/datasets`);
     } catch (err) {
       console.error('Dataset creation error:', err);
       setError(err instanceof Error ? err.message : 'Failed to create dataset');
@@ -53,8 +57,13 @@ export default function CreateDataset() {
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Create New Dataset</h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-          {error}
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg border-2 border-red-400 shadow-md">
+          <div className="flex items-center">
+            <svg className="w-6 h-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <span className="font-medium">{error}</span>
+          </div>
         </div>
       )}
 
@@ -68,22 +77,22 @@ export default function CreateDataset() {
             <p className="mb-2 text-sm text-gray-500">
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-500">CSV, JSON, or TXT (Max 10MB)</p>
+            <p className="text-xs text-gray-500">CSV files only (Max 10MB)</p>
             <input
               type="file"
               {...register('file', {
                 required: 'File is required',
                 validate: {
                   fileSize: (files) =>
-                    files[0]?.size <= 1000 * 1024 * 1024 || 'Max file size is 10MB',
+                    files[0]?.size <= 80 * 1024 * 1024 || 'Max file size is 10MB',
                   fileType: (files) =>
-                    ['text/csv', 'application/json', 'text/plain'].includes(files[0]?.type) ||
-                    'Only CSV, JSON, or TXT files allowed'
+                    ['text/csv'].includes(files[0]?.type) ||
+                    'Only CSV files allowed'
                 }
               })}
               className="hidden"
               id="file-upload"
-              accept=".csv,.json,.txt"
+              accept=".csv"
             />
             <label
               htmlFor="file-upload"
@@ -91,6 +100,11 @@ export default function CreateDataset() {
             >
               Select File
             </label>
+            {selectedFileName && (
+              <p className="mt-2 text-sm text-teal-700">
+                Selected file: <span className="font-semibold">{selectedFileName}</span>
+              </p>
+            )}
             {errors.file && (
               <p className="mt-2 text-red-500 text-sm">{errors.file.message}</p>
             )}

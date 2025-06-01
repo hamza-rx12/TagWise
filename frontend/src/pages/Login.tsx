@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { getUserRole } from "../utils/jwt";
 
 type LoginCredentials = {
     email: string;
@@ -12,7 +11,7 @@ type LoginCredentials = {
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const { register, handleSubmit, formState: { errors } } = useForm<LoginCredentials>();
-    const { login, isAuthenticated, userRole, isLoading } = useAuth();
+    const { login, isAuthenticated, userRole, isLoading, notification, clearNotification } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -22,11 +21,19 @@ function Login() {
                 navigate('/admin');
             } else if (userRole === "ROLE_USER") {
                 navigate('/annotator');
-            } else {
+            }
+            else {
                 navigate('/');
             }
         }
     }, [isAuthenticated, userRole, isLoading, navigate]);
+
+    // Clear notification when component unmounts
+    useEffect(() => {
+        return () => {
+            clearNotification();
+        };
+    }, [clearNotification]);
 
     const onSubmit: SubmitHandler<LoginCredentials> = async (data) => {
         try {
@@ -34,6 +41,8 @@ function Login() {
             // Navigation will be handled by the useEffect above
         } catch (error) {
             console.error("Login error:", error);
+            // Error is handled by displaying the notification
+            // No need to do anything else, react-hook-form will prevent default form submission
         }
     };
 
@@ -57,6 +66,18 @@ function Login() {
 
             {/* Main content */}
             <div className="relative z-10 w-full max-w-md px-6">
+                {notification && (
+                    <div className={`mb-4 p-4 rounded-lg ${notification.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {notification.message}
+                        <button 
+                            onClick={clearNotification}
+                            className="float-right text-gray-500 hover:text-gray-700"
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
+
                 <form className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 transform hover:scale-[1.02] transition-all duration-300" onSubmit={handleSubmit(onSubmit)}>
                     <div className="text-center mb-8">
                         <h1 className="text-4xl font-bold text-gray-800 mb-2">Welcome Back</h1>
@@ -139,48 +160,3 @@ function Login() {
 }
 
 export default Login;
-
-
-// function Login() {
-//     return (
-//         <div className="bg-gray-100 flex justify-center items-center h-screen">
-//             {/* Left: Image */}
-//             <div className="w-1/2 h-screen hidden lg:block">
-//                 <img src="https://miro.medium.com/v2/resize:fit:564/1*kc2F4UCQbLJg-MsGbXSwqg.jpeg" alt="Placeholder Image" className="object-cover w-full h-full" />
-//             </div>
-//             {/* Right: Login Form */}
-//             <div className="lg:p-36 md:p-52 sm:20 p-8 w-full lg:w-1/2">
-//                 <h1 className="text-2xl font-semibold mb-4">Login</h1>
-//                 <form action="#" method="POST">
-//                     {/* Username Input */}
-//                     <div className="mb-4">
-//                         <label htmlFor="username" className="block text-gray-600">Username</label>
-//                         <input type="text" id="username" name="username" className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" autoComplete="off" />
-//                     </div>
-//                     {/* Password Input */}
-//                     <div className="mb-4">
-//                         <label htmlFor="password" className="block text-gray-600">Password</label>
-//                         <input type="password" id="password" name="password" className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" autoComplete="off" />
-//                     </div>
-//                     {/* Remember Me Checkbox */}
-//                     <div className="mb-4 flex items-center">
-//                         <input type="checkbox" id="remember" name="remember" className="text-blue-500" />
-//                         <label htmlFor="remember" className="text-gray-600 ml-2">Remember Me</label>
-//                     </div>
-//                     {/* Forgot Password Link */}
-//                     <div className="mb-6 text-blue-500">
-//                         <a href="#" className="hover:underline">Forgot Password?</a>
-//                     </div>
-//                     {/* Login Button */}
-//                     <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full">Login</button>
-//                 </form>
-//                 {/* Sign up Link */}
-//                 <div className="mt-6 text-blue-500 text-center">
-//                     <a href="#" className="hover:underline">Sign up Here</a>
-//                 </div>
-//             </div>
-//         </div>
-//     )
-// }
-
-// export default Login;

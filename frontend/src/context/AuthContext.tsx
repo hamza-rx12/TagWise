@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { getUserRole, getUserEmail, getUserId, setToken, removeToken, isTokenValid, getFirstName, getLastName, getGender } from '../utils/jwt';
+import { authApi, SignupData as ApiSignupData } from '../utils/api';
 // dans ce code on a la creation d'un contexte d'authentification qui va nous permettre de gerer l'authentification de l'utilisateur dans notre application
 // Types
 type User = {
@@ -11,19 +12,17 @@ type User = {
     gender: string;
 };
 
-type SignupData = {
-    email: string;
-    firstName: string;
-    lastName: string;
-    gender: "MALE" | "FEMALE";
-    password: string;
-};
+// Reusing the SignupData type from api.ts
+type SignupData = ApiSignupData;
+
 // cette interface est utilisée pour définir le type de données que l'on va envoyer au serveur lors de l'inscription d'un nouvel utilisateur
 type AuthContextType = {
     user: User | null;
     isAuthenticated: boolean;
     userRole: string | null;
     isLoading: boolean;
+    notification: { message: string; type: "success" | "error" | "info" } | null;
+    clearNotification: () => void;
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
     signup: (data: SignupData) => Promise<void>;
@@ -31,25 +30,19 @@ type AuthContextType = {
     resendVerificationCode: (email: string) => Promise<void>;
 };
 
-// API endpoints
-const API_BASE_URL = "http://localhost:8080/api/auth";
-const ENDPOINTS = {
-    LOGIN: `${API_BASE_URL}/login`,
-    SIGNUP: `${API_BASE_URL}/signup`,
-    VERIFY: `${API_BASE_URL}/verify`,
-    RESEND_VERIFICATION: `${API_BASE_URL}/resend-verification`,
-};
 
-// Context
-// on cree le contexte d'authentification qui va nous permettre de gerer l'authentification de l'utilisateur dans notre application
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-// ce composant permet de gerer l'etat d'authentification 
-// donne le contexte d'authentification a tous les composants de l'application
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [notification, setNotification] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+    const clearNotification = () => {
+        setNotification(null);
+    };
 
     const initializeAuth = () => {
         const token = localStorage.getItem('token');
@@ -89,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUserRole(null);
                     setIsAuthenticated(false);
                 }
-            } catch (error) {
+            } catch {
                 removeToken();
                 setUser(null);
                 setUserRole(null);
@@ -109,25 +102,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, password: string) => {
         try {
-            const response = await fetch(ENDPOINTS.LOGIN, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Login failed");
-            }
-
-            const data = await response.json();
+            const data = await authApi.login({ email, password });
             console.log('Login Response:', data);
             setToken(data.token);
             initializeAuth();
         } catch (error) {
             console.error("Login error:", error);
-            throw error;
+            setNotification({ 
+                message: error instanceof Error ? error.message : 'Login failed', 
+                type: 'error' 
+            });
+            return Promise.reject(error instanceof Error ? error.message : 'Login failed');
         }
     };
 
@@ -140,68 +125,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signup = async (data: SignupData) => {
         try {
-            const response = await fetch(ENDPOINTS.SIGNUP, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Signup failed");
-            }
-
-            const result = await response.json();
+            const result = await authApi.signup(data);
             console.log("Signup Response:", result);
         } catch (error) {
             console.error("Signup error:", error);
-            throw error;
+            setNotification({ 
+                message: error instanceof Error ? error.message : 'Signup failed', 
+                type: 'error' 
+            });
+            return Promise.reject(error instanceof Error ? error.message : 'Signup failed');
         }
     };
 
     const verifyEmail = async (email: string, code: string) => {
         try {
-            const response = await fetch(ENDPOINTS.VERIFY, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, verificationCode: code }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Verification failed");
-            }
-
-            const data = await response.json();
+            const data = await authApi.verifyEmail(email, code);
             console.log("Verification Response:", data);
         } catch (error) {
             console.error("Verification error:", error);
-            throw error;
+            setNotification({ 
+                message: error instanceof Error ? error.message : 'Verification failed', 
+                type: 'error' 
+            });
+            return Promise.reject(error instanceof Error ? error.message : 'Verification failed');
         }
     };
 
     const resendVerificationCode = async (email: string) => {
         try {
-            const response = await fetch(ENDPOINTS.RESEND_VERIFICATION, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to resend verification code");
-            }
-
-            const data = await response.json();
+            const data = await authApi.resendVerificationCode(email);
             console.log("Resend Verification Response:", data);
         } catch (error) {
             console.error("Resend verification error:", error);
-            throw error;
+            setNotification({ 
+                message: error instanceof Error ? error.message : 'Failed to resend verification code', 
+                type: 'error' 
+            });
+            return Promise.reject(error instanceof Error ? error.message : 'Failed to resend verification code');
         }
     };
 
@@ -212,6 +172,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isAuthenticated,
                 userRole,
                 isLoading,
+                notification,
+                clearNotification,
                 login,
                 logout,
                 signup,

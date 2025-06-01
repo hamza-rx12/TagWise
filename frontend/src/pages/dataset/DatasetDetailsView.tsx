@@ -1,7 +1,7 @@
 // DatasetDetailsView.tsx
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { authenticatedFetch } from '../../utils/api';
+import { adminApi, DatasetDetails } from '../../utils/api';
 
 type TextPair = {
     id: number;
@@ -15,28 +15,24 @@ type Annotator = {
     completedTasks: number;
 };
 
-type DatasetDetails = {
-    id: number;
-    name: string;
-    description?: string;
-    classes: string;
-    completionPercentage: number;
-    totalPairs: number;
+// Extending the DatasetDetails type from api.ts with more specific types
+interface DetailedDatasetDetails extends DatasetDetails {
     samplePairs: TextPair[];
     assignedAnnotators: Annotator[];
-};
+}
 
 export default function DatasetDetailsView() {
     const { datasetId } = useParams<{ datasetId: string }>();
-    const [dataset, setDataset] = useState<DatasetDetails | null>(null);
+    const [dataset, setDataset] = useState<DetailedDatasetDetails | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchDatasetDetails = async () => {
+            if (!datasetId) return;
+
             try {
-                const response = await authenticatedFetch(`/api/admin/datasets/${datasetId}`);
-                const data = await response.json();
-                setDataset(data);
+                const data = await adminApi.getDatasetById(datasetId);
+                setDataset(data as DetailedDatasetDetails);
             } catch (error) {
                 console.error('Error fetching dataset details:', error);
             } finally {

@@ -15,7 +15,7 @@ type SignupFormData = {
 function Signup() {
     const [isLoading, setIsLoading] = useState(false);
     const { register, handleSubmit, getValues, formState: { errors } } = useForm<SignupFormData>();
-    const { signup, isAuthenticated, userRole, isLoading: authLoading } = useAuth();
+    const { signup, isAuthenticated, userRole, isLoading: authLoading, notification, clearNotification } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -31,6 +31,13 @@ function Signup() {
         }
     }, [isAuthenticated, userRole, authLoading, navigate]);
 
+    // Clear notification when component unmounts
+    useEffect(() => {
+        return () => {
+            clearNotification();
+        };
+    }, [clearNotification]);
+
     const onSubmit: SubmitHandler<SignupFormData> = async (data) => {
         setIsLoading(true);
         try {
@@ -38,7 +45,9 @@ function Signup() {
             await signup(signupData);
             navigate('/verify');
         } catch (error) {
-            console.error("Error:", error);
+            console.error("Signup error:", error);
+            // Error is handled by displaying the notification
+            // No need to do anything else, react-hook-form will prevent default form submission
         } finally {
             setIsLoading(false);
         }
@@ -64,6 +73,18 @@ function Signup() {
 
             {/* Main content */}
             <div className="relative z-10 w-full max-w-md px-6">
+                {notification && (
+                    <div className={`mb-4 p-4 rounded-lg ${notification.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {notification.message}
+                        <button 
+                            onClick={clearNotification}
+                            className="float-right text-gray-500 hover:text-gray-700"
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
+
                 <form className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 transform hover:scale-[1.02] transition-all duration-300" onSubmit={handleSubmit(onSubmit)}>
                     <div className="text-center mb-8">
                         <h1 className="text-4xl font-bold text-gray-800 mb-2">Create Account</h1>

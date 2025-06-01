@@ -7,14 +7,20 @@ import com.nli.tagwise.dto.TextPairDto;
 import com.nli.tagwise.models.Dataset;
 import com.nli.tagwise.models.DatasetAnnotator;
 import com.nli.tagwise.models.Task;
+import com.nli.tagwise.repository.IDatasetRepo;
 import com.nli.tagwise.repository.ITaskRepo;
 import com.nli.tagwise.services.DatasetService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,30 +30,129 @@ public class DatasetController {
 
     private final DatasetService datasetService;
     private final ITaskRepo taskRepo;
+    private final IDatasetRepo datasetRepo;
 
-    public DatasetController(DatasetService datasetService, ITaskRepo taskRepo) {
+    public DatasetController(DatasetService datasetService, ITaskRepo taskRepo, IDatasetRepo datasetRepo) {
         this.datasetService = datasetService;
         this.taskRepo = taskRepo; // Initialisez le repository
+        this.datasetRepo = datasetRepo;
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    /**
+     * Uploads a dataset from a CSV file.
+     * Only CSV files are accepted. Other file types will result in a 400 Bad Request response.
+     */
+    @PostMapping("/upload")
     public ResponseEntity<Dataset> uploadDataset(
             @RequestParam("file") MultipartFile file,
             @RequestParam("name") String name,
             @RequestParam("classes") String classes,
             @RequestParam(value = "description", required = false) String description) {
 
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".csv")) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
         try {
-            Dataset dataset = datasetService.createDataset(
-                    file,
-                    name,
-                    classes,
-                    description);
-            return ResponseEntity.ok(dataset);
+            Dataset savedDataset = datasetService.saveDatasetFromCsv(file, name, classes, description);
+            return ResponseEntity.ok(savedDataset);
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+//    @PostMapping("/upload")
+//    public ResponseEntity<Dataset> uploadDataset(
+//            @RequestParam("file") MultipartFile file,
+//            @RequestParam("name") String name,
+//            @RequestParam("classes") String classes,
+//            @RequestParam(value = "description", required = false) String description) {
+//
+//        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".csv")) {
+//            return ResponseEntity.badRequest().body(null);
+//        }
+//
+//        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+//            // Create and persist Dataset
+//            Dataset dataset = new Dataset();
+//            dataset.setName(name);
+//            dataset.setDescription(description);
+//            dataset.setClasses(classes);
+//            dataset.setFilePath("inline"); // No physical file
+//            dataset.setTasks(new ArrayList<>());
+//
+//            Dataset savedDataset = datasetRepo.save(dataset); // Save first for FK binding
+//
+//            // Parse CSV and create tasks
+//            String line;
+//            int lineNumber = 0;
+//            List<Task> tasks = new ArrayList<>();
+//
+//            while ((line = reader.readLine()) != null) {
+//                lineNumber++;
+//                String[] columns = line.split("\t", -1); // allow empty columns
+//
+//                if (columns.length < 2) {
+//                    // skip or log malformed line
+//                    continue;
+//                }
+//
+//                Task task = new Task();
+//                task.setDataset(savedDataset);
+//                task.setText1(columns[0].trim());
+//                task.setText2(columns[1].trim());
+//                task.setAnnotations(new ArrayList<>());
+//                task.setAnnotators(new ArrayList<>());
+//                task.setCompletionStatus(new HashMap<>());
+//
+//                tasks.add(task);
+//            }
+//
+//            taskRepo.saveAll(tasks);
+//            return ResponseEntity.ok(savedDataset);
+//
+//        } catch (IOException e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+//        }
+//    }
+
+
+    @PostMapping("/{datasetId}/assign-users")
+    public ResponseEntity<?> assignUsersToDataset(
+            @PathVariable Long datasetId,
+            @RequestBody List<Long> userIds) {
+        try {
+            Dataset updatedDataset = datasetService.assignAnnotatorsToDataset(datasetId, userIds);
+            return ResponseEntity.ok(updatedDataset);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<Dataset> uploadDataset(
+//            @RequestParam("file") MultipartFile file,
+//            @RequestParam("name") String name,
+//            @RequestParam("classes") String classes,
+//            @RequestParam(value = "description", required = false) String description) {
+//
+//        try {
+//            // Validate that the file is a CSV file
+//            String originalFilename = file.getOriginalFilename();
+//            if (originalFilename != null && !originalFilename.toLowerCase().endsWith(".csv")) {
+//                return ResponseEntity.badRequest().build();
+//            }
+//
+//            Dataset dataset = datasetService.createDataset(
+//                    file,
+//                    name,
+//                    classes,
+//                    description);
+//            return ResponseEntity.ok(dataset);
+//        } catch (IOException e) {
+//            return ResponseEntity.internalServerError().build();
+//        }
+//    }
 
     // DatasetController.java
     @GetMapping("/list")
@@ -91,7 +196,7 @@ public class DatasetController {
                 .map(da -> new AnnotatorDto(
                         da.getAnnotator().getId(),
                         da.getAnnotator().getFirstName() + " " + da.getAnnotator().getLastName(),
-                        (int) taskRepo.countByDatasetAndAnnotatorAndCompleted(dataset, da.getAnnotator(), true)))
+                        (int) taskRepo.countCompletedTasksByDatasetAndAnnotator(dataset, da.getAnnotator())))
                 .collect(Collectors.toList()));
 
         return ResponseEntity.ok(response);

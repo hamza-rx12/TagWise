@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AnnotatorSidebar from '../components/AnnotatorSidebar';
+import * as React from "react";
 
 const AnnotatorHome: React.FC = () => {
     const { user } = useAuth();
