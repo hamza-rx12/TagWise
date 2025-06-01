@@ -28,6 +28,7 @@ import AnnotatorTasks from './pages/annotator/AnnotatorTasks.tsx';
 import AnnotatorProfile from './pages/annotator/AnnotatorProfile';
 import AnnotatorDashboard from './pages/annotator/AnnotatorDashboard';
 import AdminProfile from './pages/admin/AdminProfile';
+import AdvancedOptions from './pages/dataset/AdvencedOptions';
 
 function App() {
   return (
@@ -204,6 +205,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
                   <AdminProfile />
+                </ProtectedRoute>
+              }
+            />
+            {/* Advanced Options Route */}
+            <Route
+              path="/admin/advanced-options"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+                  <AdvancedOptions />
                 </ProtectedRoute>
               }
             />

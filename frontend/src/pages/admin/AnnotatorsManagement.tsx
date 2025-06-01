@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authenticatedFetch } from '../../utils/api.ts';
-import { useAuth } from '../../context/AuthContext.tsx';
-import AdminSidebar from "../../components/AdminSidebar.tsx";
+import { Link, useNavigate } from 'react-router-dom';
+import { authenticatedFetch } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
+import AdminSidebar from '../../components/AdminSidebar';
 
 // Define the Annotator type
 type Annotator = {
@@ -16,7 +16,7 @@ type Annotator = {
 };
 
 function AnnotatorsManagement() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [annotators, setAnnotators] = useState<Annotator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +27,15 @@ function AnnotatorsManagement() {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Search:', searchQuery);
+  };
+
+  
+  // New state for selected annotator and popup
+  const [selectedAnnotator, setSelectedAnnotator] = useState<Annotator | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
 
   // Redirect if not authenticated or not an admin
   useEffect(() => {
@@ -116,10 +125,26 @@ function AnnotatorsManagement() {
     }, 3000);
   };
 
-  // Handle search form submission
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // The search is already handled by the filteredAnnotators variable
+  // Toggle sidebar
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  // Handle annotator click to show details
+  const handleAnnotatorClick = (annotator: Annotator) => {
+    setSelectedAnnotator(annotator);
+    setShowPopup(true);
+  };
+
+  // Close popup
+  const closePopup = () => {
+    setShowPopup(false);
+    setSelectedAnnotator(null);
+  };
+
+  // Get initials for avatar
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   // Filter annotators based on search term
@@ -132,15 +157,20 @@ function AnnotatorsManagement() {
   return (
     <div className="font-poppins antialiased">
       <div className="h-full w-screen flex flex-row">
-        <AdminSidebar
-            isMobileMenuOpen={isMobileMenuOpen}
-            setIsMobileMenuOpen={setIsMobileMenuOpen}
-            isSidebarOpen={isSidebarOpen}
-            setIsSidebarOpen={setIsSidebarOpen}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            handleSearch={handleSearch}
-        />
+        {/* Mobile Menu Button - Only visible on small screens */}
+        <button
+          className="p-2 border-2 bg-white rounded-md border-gray-200 shadow-lg text-gray-500 focus:bg-teal-500 focus:outline-none focus:text-white absolute top-0 left-0 sm:hidden z-20"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle mobile menu"
+        >
+          <svg className="w-5 h-5 fill-current" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path
+              fillRule="evenodd"
+              d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
 
         {/* Main Content */}
         <div className={`flex-1 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 transition-all duration-300 ${isSidebarOpen ? 'ml-0 sm:ml-60' : 'ml-0 sm:ml-20'
@@ -259,19 +289,7 @@ function AnnotatorsManagement() {
                       <thead>
                         <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            First Name
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Last Name
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Email
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Gender
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Status
+                            Annotator
                           </th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Actions
@@ -282,43 +300,35 @@ function AnnotatorsManagement() {
                         {filteredAnnotators.map((annotator, index) => (
                           <tr
                             key={annotator.id}
-                            className="hover:bg-gray-50 transition-colors"
+                            className="hover:bg-gray-50 transition-colors cursor-pointer"
                             style={{
                               animationDelay: `${index * 0.05}s`,
                               animation: 'fadeIn 0.5s ease-out forwards',
                               opacity: 0
                             }}
+                            onClick={() => handleAnnotatorClick(annotator)}
                           >
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{annotator.firstName}</div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{annotator.lastName}</div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="text-sm text-gray-500 max-w-xs truncate">{annotator.email}</div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center">
-                                <span className={`w-2 h-2 rounded-full mr-2 ${annotator.gender === 'MALE' ? 'bg-blue-400' : 'bg-pink-400'
-                                  }`}></span>
-                                <span className="text-sm text-gray-500">{annotator.gender}</span>
+                                <div className="flex-shrink-0 h-10 w-10">
+                                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-teal-500 to-teal-600 flex items-center justify-center text-white font-medium">
+                                    {getInitials(annotator.firstName, annotator.lastName)}
+                                  </div>
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {annotator.firstName} {annotator.lastName}
+                                  </div>
+                                </div>
                               </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span
-                                className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${annotator.enabled
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
-                                  }`}
-                              >
-                                {annotator.enabled ? 'Active' : 'Inactive'}
-                              </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex justify-end space-x-3">
                                 <button
-                                  onClick={() => handleEdit(annotator)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit(annotator);
+                                  }}
                                   className="text-indigo-600 hover:text-indigo-900 transition-colors bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md flex items-center"
                                 >
                                   <svg className="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -327,7 +337,10 @@ function AnnotatorsManagement() {
                                   Edit
                                 </button>
                                 <button
-                                  onClick={() => handleSoftDelete(annotator.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSoftDelete(annotator.id);
+                                  }}
                                   className="text-red-600 hover:text-red-900 transition-colors bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md flex items-center"
                                 >
                                   <svg className="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -345,7 +358,15 @@ function AnnotatorsManagement() {
                 )}
               </div>
             )}
-
+            <AdminSidebar
+              isMobileMenuOpen={isMobileMenuOpen}
+              setIsMobileMenuOpen={setIsMobileMenuOpen}
+              isSidebarOpen={isSidebarOpen}
+              setIsSidebarOpen={setIsSidebarOpen}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              handleSearch={handleSearch}
+            />
             {/* Pagination (if needed) */}
             {!isLoading && filteredAnnotators.length > 0 && (
               <div className="mt-6 flex justify-between items-center">
@@ -361,30 +382,121 @@ function AnnotatorsManagement() {
         </div>
       </div>
 
+      {/* Annotator Details Popup */}
+      {showPopup && selectedAnnotator && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          {/* Semi-transparent backdrop with blur effect */}
+          <div 
+            className="absolute inset-0 bg-black/10 backdrop-blur-md"
+            onClick={closePopup}
+          ></div>
+          
+          {/* Popup content */}
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative animate-fadeIn z-10">
+            {/* Close button */}
+            <button 
+              onClick={closePopup}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* Annotator details */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-r from-teal-500 to-teal-600 flex items-center justify-center text-white text-2xl font-medium mb-4">
+                {getInitials(selectedAnnotator.firstName, selectedAnnotator.lastName)}
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {selectedAnnotator.firstName} {selectedAnnotator.lastName}
+              </h2>
+              <p className="text-gray-500">{selectedAnnotator.email}</p>
+            </div>
+            
+            {/* Annotator details list */}
+            <div className="space-y-4">
+              <div className="flex justify-between border-b border-gray-100 pb-2">
+                <span className="text-gray-500">ID</span>
+                <span className="text-gray-900 font-medium">{selectedAnnotator.id}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-100 pb-2">
+                <span className="text-gray-500">Gender</span>
+                <div className="flex items-center">
+                  <span className={`w-2 h-2 rounded-full mr-2 ${selectedAnnotator.gender === 'MALE' ? 'bg-blue-400' : 'bg-pink-400'}`}></span>
+                  <span className="text-gray-900 font-medium">{selectedAnnotator.gender}</span>
+                </div>
+              </div>
+              <div className="flex justify-between border-b border-gray-100 pb-2">
+                <span className="text-gray-500">Status</span>
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                  selectedAnnotator.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {selectedAnnotator.enabled ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Action buttons */}
+            <div className="mt-8 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  closePopup();
+                  handleEdit(selectedAnnotator);
+                }}
+                className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md transition-colors flex items-center"
+              >
+                <svg className="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  closePopup();
+                  handleSoftDelete(selectedAnnotator.id);
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors flex items-center"
+              >
+                <svg className="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* Add CSS for animations */}
-      <style>
+      <style jsx>
         {`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-
+        
         @keyframes blink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
         }
-
+        
         @keyframes slideIn {
           from { transform: translateX(20px); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
-
+        
         .animate-blink {
           animation: blink 1s step-end infinite;
         }
-
+        
         .animate-slideIn {
           animation: slideIn 0.3s ease-out forwards;
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out forwards;
         }
       `}
       </style>

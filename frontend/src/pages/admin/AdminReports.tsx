@@ -24,31 +24,71 @@ function AdminReports() {
   };
 
   return (
-    <div className="font-poppins antialiased">
-      <div className="h-full w-screen flex flex-row">
-        <AdminSidebar
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          handleSearch={handleSearch}
-        />
-        <div className={`flex-1 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 transition-all duration-300 ${isSidebarOpen ? 'ml-0 sm:ml-60' : 'ml-0 sm:ml-20'}`}>
-          <div className="p-8">
-            <h1 className="text-2xl font-bold mb-4">Admin Reports</h1>
-            <p>View system-wide reports and analytics here.</p>
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-lg font-semibold mb-3">Annotator Performance</h2>
-                <p className="text-gray-600">View performance metrics for all annotators.</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-lg font-semibold mb-3">Dataset Statistics</h2>
-                <p className="text-gray-600">Check statistics for all datasets in the system.</p>
-              </div>
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <AdminSidebar
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        handleSearch={handleSearch}
+      />
+
+      {/* Main Content Area */}
+      <div className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        <div className="p-8 space-y-8">
+          <h1 className="text-2xl font-bold mb-6">Reports Dashboard</h1>
+
+          {/* General Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-xl">
+              <h2 className="text-lg font-semibold mb-2">Total Datasets</h2>
+              <p className="text-3xl font-bold text-teal-600">12</p>
             </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-xl">
+              <h2 className="text-lg font-semibold mb-2">Total Pairs</h2>
+              <p className="text-3xl font-bold text-indigo-600">24,500</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-xl">
+              <h2 className="text-lg font-semibold mb-2">Active Annotators</h2>
+              <p className="text-3xl font-bold text-amber-600">7</p>
+            </div>
+          </div>
+
+          {/* Top Annotators */}
+          <div className="bg-white p-6 rounded-xl shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">Top Annotators</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Annotator</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Tasks</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <tr>
+                    <td className="px-4 py-3 whitespace-nowrap">John Doe</td>
+                    <td className="px-4 py-3 whitespace-nowrap">2400</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 whitespace-nowrap">Jane Smith</td>
+                    <td className="px-4 py-3 whitespace-nowrap">1800</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Download Reports */}
+          <div className="mt-6">
+            <button className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg shadow-md transition-colors duration-200">
+              Export Full Report
+            </button>
           </div>
         </div>
       </div>
