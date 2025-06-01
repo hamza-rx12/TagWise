@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
 import { Link, useNavigate } from 'react-router-dom';
 import * as React from "react";
+import { adminApi } from '../../utils/api';
 
 // Example types
 type Annotator = {
@@ -56,8 +57,31 @@ const AdminDashboard: React.FC = () => {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                // In a real application, you would fetch this data from your API
-                // For now, we'll use mock data
+                // Fetch real data from API
+                const [annotatorCount, datasetCount, taskCount, completedTaskCount] = await Promise.all([
+                    adminApi.getAnnotatorCount(),
+                    adminApi.getDatasetCount(),
+                    adminApi.getTaskCount(),
+                    adminApi.getCompletedTaskCount()
+                ]);
+
+                console.log('API Responses:', {
+                    annotatorCount,
+                    datasetCount,
+                    taskCount,
+                    completedTaskCount
+                });
+
+                // Update stats with real data
+                const newStats = {
+                    totalAnnotators: annotatorCount,
+                    totalDatasets: datasetCount,
+                    totalTasks: taskCount,
+                    completedTasks: completedTaskCount
+                };
+
+                console.log('New Stats:', newStats);
+                setStats(newStats);
 
                 // Mock data for recent annotators
                 setRecentAnnotators([
@@ -98,14 +122,6 @@ const AdminDashboard: React.FC = () => {
                         createdAt: '2023-11-15'
                     }
                 ]);
-
-                // Mock stats
-                setStats({
-                    totalAnnotators: 10,
-                    totalDatasets: 5,
-                    totalTasks: 100,
-                    completedTasks: 75
-                });
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -146,7 +162,7 @@ const AdminDashboard: React.FC = () => {
                 >
                     <div className="p-8">
                         <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
-                        
+
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                             <div className="bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/50">
@@ -162,7 +178,7 @@ const AdminDashboard: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/50">
                                 <div className="flex items-center">
                                     <div className="p-3 rounded-full bg-green-100 text-green-600">
@@ -176,7 +192,7 @@ const AdminDashboard: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/50">
                                 <div className="flex items-center">
                                     <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
@@ -190,7 +206,7 @@ const AdminDashboard: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/50">
                                 <div className="flex items-center">
                                     <div className="p-3 rounded-full bg-purple-100 text-purple-600">
@@ -205,7 +221,7 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                             {/* Recent Annotators */}
                             <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 border border-white/50">
@@ -215,7 +231,7 @@ const AdminDashboard: React.FC = () => {
                                         View All
                                     </Link>
                                 </div>
-                                
+
                                 {loading ? (
                                     <div className="flex justify-center items-center h-64">
                                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
@@ -259,7 +275,7 @@ const AdminDashboard: React.FC = () => {
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">{annotator.email}</td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => navigate(`/admin/edit-annotator/${annotator.id}`)}
                                                                 className="text-teal-600 hover:text-teal-900 font-medium"
                                                             >
@@ -273,7 +289,7 @@ const AdminDashboard: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                            
+
                             {/* Recent Datasets */}
                             <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 border border-white/50">
                                 <div className="flex justify-between items-center mb-6">
@@ -282,7 +298,7 @@ const AdminDashboard: React.FC = () => {
                                         View All
                                     </Link>
                                 </div>
-                                
+
                                 {loading ? (
                                     <div className="flex justify-center items-center h-64">
                                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
@@ -334,7 +350,7 @@ const AdminDashboard: React.FC = () => {
                                 )}
                             </div>
                         </div>
-                        
+
                         {/* Quick Actions */}
                         <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 border border-white/50">
                             <h2 className="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h2>
@@ -353,7 +369,7 @@ const AdminDashboard: React.FC = () => {
                                         <p className="text-sm text-gray-600">Add, edit, or remove annotators</p>
                                     </div>
                                 </Link>
-                                
+
                                 <Link
                                     to="/admin/datasets/create"
                                     className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg hover:shadow-md transition-all duration-200"
@@ -368,7 +384,7 @@ const AdminDashboard: React.FC = () => {
                                         <p className="text-sm text-gray-600">Upload and create a new dataset</p>
                                     </div>
                                 </Link>
-                                
+
                                 <Link
                                     to="/admin/reports"
                                     className="flex items-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg hover:shadow-md transition-all duration-200"
@@ -383,7 +399,7 @@ const AdminDashboard: React.FC = () => {
                                         <p className="text-sm text-gray-600">See system-wide analytics</p>
                                     </div>
                                 </Link>
-                                
+
                                 <Link
                                     to="/admin/messages"
                                     className="flex items-center p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg hover:shadow-md transition-all duration-200"

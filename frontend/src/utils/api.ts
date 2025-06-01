@@ -1,10 +1,10 @@
 // Base URLs for different API categories
 const API_BASE_URL = 'http://localhost:8080';
 const AUTH_API = `${API_BASE_URL}/api/auth`;
-const ANNOTATOR_API = `${API_BASE_URL}/api/v1/annotator`;
-const ANNOTATORS_API = `${API_BASE_URL}/api/v1/annotators`;
+// const ANNOTATOR_API = `${API_BASE_URL}/api/v1/annotator`;
+const ANNOTATORS_API = `${API_BASE_URL}/api/annotators`;
 const ADMIN_API = `${API_BASE_URL}/api/admin`;
-
+const TASKS_API = `${API_BASE_URL}/api/tasks`;
 // Generic authenticated fetch function
 
 export async function authenticatedFetch(url: string, options: RequestInit = {}) {
@@ -98,7 +98,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
         });
         throw new Error(errorData.message || `API error: ${response.status} ${response.statusText}`);
     }
-    return await response.json() as T;
+    const data = await response.json();
+    console.log('API Response Data:', {
+        url: response.url,
+        data
+    });
+    return data as T;
 }
 
 // ==================== Auth API ====================
@@ -160,7 +165,7 @@ export type Task = {
 
 export const annotatorApi = {
     getTasks: async () => {
-        const response = await authenticatedFetch(`/api/tasks/2`);
+        const response = await authenticatedFetch(`${TASKS_API}/2`);
         return handleResponse<Task[]>(response);
     },
 
@@ -210,6 +215,30 @@ export const adminApi = {
     getDatasets: async () => {
         const response = await authenticatedFetch(`${ADMIN_API}/datasets/list`);
         return handleResponse<Dataset[]>(response);
+    },
+
+    getDatasetCount: async () => {
+        console.log('Fetching dataset count from:', `${ADMIN_API}/datasets/count`);
+        const response = await authenticatedFetch(`${ADMIN_API}/datasets/count`);
+        return handleResponse<number>(response);
+    },
+
+    getAnnotatorCount: async () => {
+        console.log('Fetching annotator count from:', `${ANNOTATORS_API}/count`);
+        const response = await authenticatedFetch(`${ANNOTATORS_API}/count`);
+        return handleResponse<number>(response);
+    },
+
+    getTaskCount: async () => {
+        console.log('Fetching task count from:', `${TASKS_API}/count`);
+        const response = await authenticatedFetch(`${TASKS_API}/count`);
+        return handleResponse<number>(response);
+    },
+
+    getCompletedTaskCount: async () => {
+        console.log('Fetching completed task count from:', `${TASKS_API}/completed/count`);
+        const response = await authenticatedFetch(`${TASKS_API}/completed/count`);
+        return handleResponse<number>(response);
     },
 
     getDatasetById: async (id: string) => {

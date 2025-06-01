@@ -16,7 +16,7 @@ import com.nli.tagwise.repository.IUserRepo;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/annotators")
+@RequestMapping("/api/annotators")
 @PreAuthorize("hasRole('ROLE_ADMIN')") // Only admins can access this controller
 @RequiredArgsConstructor
 public class AnnotatorController {

@@ -27,6 +27,14 @@ public class TaskController {
     }
 
     /**
+     * Get count of completed tasks
+     */
+    @GetMapping("/completed/count")
+    public ResponseEntity<Long> getCompletedTaskCount() {
+        return ResponseEntity.ok(taskService.getCompletedTaskCount());
+    }
+
+    /**
      * Get a task by its id
      */
     @GetMapping("/{id}")

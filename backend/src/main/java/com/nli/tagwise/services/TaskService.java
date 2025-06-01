@@ -289,4 +289,11 @@ public class TaskService {
     public Long getTaskCount() {
         return taskRepo.count();
     }
+
+    public Long getCompletedTaskCount() {
+        List<Task> allTasks = taskRepo.findAll();
+        return allTasks.stream()
+                .filter(Task::isCompleted)
+                .count();
+    }
 }

@@ -22,11 +22,7 @@ public class Task {
     private Dataset dataset;
 
     @ManyToMany
-    @JoinTable(
-        name = "task_annotator",
-        joinColumns = @JoinColumn(name = "task_id"),
-        inverseJoinColumns = @JoinColumn(name = "annotator_id")
-    )
+    @JoinTable(name = "task_annotator", joinColumns = @JoinColumn(name = "task_id"), inverseJoinColumns = @JoinColumn(name = "annotator_id"))
     private List<User> annotators = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
@@ -48,6 +44,7 @@ public class Task {
 
     /**
      * Adds an annotator to this task.
+     * 
      * @param annotator The annotator to add
      */
     public void addAnnotator(User annotator) {
@@ -59,6 +56,7 @@ public class Task {
 
     /**
      * Checks if the task is completed by all assigned annotators.
+     * 
      * @return true if all annotators have completed the task
      */
     public boolean isCompleted() {
@@ -70,6 +68,7 @@ public class Task {
 
     /**
      * Sets the completion status for a specific annotator.
+     * 
      * @param annotator The annotator
      * @param completed The completion status
      */
@@ -81,6 +80,7 @@ public class Task {
 
     /**
      * Adds an annotation from an annotator.
+     * 
      * @param annotation The annotation value
      */
     public void addAnnotation(String annotation) {
