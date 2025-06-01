@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../utils/api';
 import { useState, useEffect } from 'react';
+import Modal from '../../components/Modal'; // Ajuste le chemin si besoin
 
 type DatasetFormData = {
   name: string;
@@ -10,17 +11,19 @@ type DatasetFormData = {
   file: FileList;
 };
 
-export default function CreateDataset() {
+type CreateDatasetProps = {
+  onSuccess?: () => void;
+};
+
+export default function CreateDataset({ onSuccess }: CreateDatasetProps) {
   const { register, handleSubmit, formState: { errors }, watch } = useForm<DatasetFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
-  // Watch for file changes
   const fileWatch = watch('file');
   const navigate = useNavigate();
 
-  // Update selectedFileName when file changes
   useEffect(() => {
     if (fileWatch && fileWatch.length > 0) {
       setSelectedFileName(fileWatch[0].name);
@@ -40,9 +43,8 @@ export default function CreateDataset() {
       formData.append('classes', data.classes);
       if (data.description) formData.append('description', data.description);
 
-      const result = await adminApi.createDataset(formData);
-      console.log(`dataset created with id ${result.id}!!!!!!`);
-      // navigate(`/admin/datasets/${result.id}`);
+      await adminApi.createDataset(formData);
+      if (onSuccess) onSuccess(); // ferme le modal après création
       navigate(`/admin/datasets`);
     } catch (err) {
       console.error('Dataset creation error:', err);
@@ -56,15 +58,20 @@ export default function CreateDataset() {
     <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Create New Dataset</h2>
 
+      {/* Error Modal */}
       {error && (
-        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg border-2 border-red-400 shadow-md">
-          <div className="flex items-center">
-            <svg className="w-6 h-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-            <span className="font-medium">{error}</span>
+        <Modal onClose={() => setError('')}>
+          <div className="p-6">
+            <h3 className="text-xl font-semibold text-red-600 mb-4">Dataset Creation Failed</h3>
+            <p className="text-gray-800 mb-4">{error}</p>
+            <button
+              onClick={() => setError('')}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              Close
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -84,7 +91,7 @@ export default function CreateDataset() {
                 required: 'File is required',
                 validate: {
                   fileSize: (files) =>
-                    files[0]?.size <= 80 * 1024 * 1024 || 'Max file size is 10MB',
+                    files[0]?.size <= 10 * 1024 * 1024 || 'Max file size is 10MB',
                   fileType: (files) =>
                     ['text/csv'].includes(files[0]?.type) ||
                     'Only CSV files allowed'

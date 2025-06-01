@@ -1,10 +1,12 @@
 // pages/DatasetList.tsx
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { adminApi, Dataset } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
+import { Link } from 'react-router-dom';
 import Modal from '../../components/Modal';
+import CreateDataset from './CreateDataset';
 import * as React from "react";
 
 type Annotator = {
@@ -32,6 +34,7 @@ export default function DatasetList() {
   const [isAssigning, setIsAssigning] = useState(false);
   const [isLoadingAnnotators, setIsLoadingAnnotators] = useState(false);
   const [selectedAnnotators, setSelectedAnnotators] = useState<string[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false); // Ajout pour le modal de création
 
   // Add filtered annotators computation
   const filteredAnnotators = annotators.filter(annotator => {
@@ -203,12 +206,12 @@ export default function DatasetList() {
             <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 border border-white/50">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Datasets</h2>
-                <Link
-                  to="/admin/datasets/create"
+                <button
+                  onClick={() => setShowCreateModal(true)}
                   className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
                 >
-                  + New Dataset
-                </Link>
+                  New Dataset
+                </button>
               </div>
 
               {datasets.length === 0 ? (
@@ -231,12 +234,6 @@ export default function DatasetList() {
                   <p className="mt-1 text-sm text-gray-500 max-w-md mx-auto">
                     It looks like you haven't created any datasets yet. Get started by creating a new dataset.
                   </p>
-                  <Link
-                    to="/admin/datasets/create"
-                    className="mt-4 inline-block px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                  >
-                    Create Dataset
-                  </Link>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -298,6 +295,26 @@ export default function DatasetList() {
           </div>
         </div>
       </div>
+
+      {/* Modal pour la création de dataset */}
+      {showCreateModal && (
+        <Modal onClose={() => setShowCreateModal(false)}>
+          <div className="relative">
+            {/* Croix de fermeture */}
+            <button
+              onClick={() => setShowCreateModal(false)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 z-10"
+              aria-label="Close"
+            >
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <CreateDataset onSuccess={() => setShowCreateModal(false)} />
+          </div>
+        </Modal>
+      )}
+
       {selectedDataset && !showAssignModal && (
         <Modal onClose={handleCloseModal}>
           <div className="p-8 max-w-5xl w-full bg-gradient-to-br from-white to-gray-50 rounded-2xl">

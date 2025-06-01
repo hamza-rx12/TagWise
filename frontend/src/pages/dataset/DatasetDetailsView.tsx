@@ -154,7 +154,7 @@ export default function DatasetDetailsView() {
                             {dataset.assignedAnnotators.length === 0 && (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                                        Aucun annotateur affecté
+                                        No annotator is affected to this dataset
                                     </td>
                                 </tr>
                             )}
