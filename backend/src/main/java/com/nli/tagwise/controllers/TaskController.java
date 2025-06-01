@@ -19,6 +19,14 @@ public class TaskController {
     }
 
     /**
+     * Get count of tasks
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Long> getTaskCount() {
+        return ResponseEntity.ok(taskService.getTaskCount());
+    }
+
+    /**
      * Get a task by its id
      */
     @GetMapping("/{id}")

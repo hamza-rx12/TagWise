@@ -158,8 +158,7 @@ public class TaskService {
 
             // Get completion status for all annotators
             Map<Long, Boolean> completionStatus = new HashMap<>();
-            task.getCompletionStatus().forEach((user, status) -> 
-                completionStatus.put(user.getId(), status));
+            task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
             dto.setCompletionStatus(completionStatus);
 
             return dto;
@@ -204,8 +203,7 @@ public class TaskService {
 
         // Get completion status for all annotators
         Map<Long, Boolean> completionStatus = new HashMap<>();
-        task.getCompletionStatus().forEach((user, status) -> 
-            completionStatus.put(user.getId(), status));
+        task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
         dto.setCompletionStatus(completionStatus);
 
         return dto;
@@ -233,8 +231,7 @@ public class TaskService {
 
         // Get completion status for all annotators
         Map<Long, Boolean> completionStatus = new HashMap<>();
-        task.getCompletionStatus().forEach((user, status) -> 
-            completionStatus.put(user.getId(), status));
+        task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
         dto.setCompletionStatus(completionStatus);
 
         return dto;
@@ -265,8 +262,7 @@ public class TaskService {
 
             // Get completion status for all annotators
             Map<Long, Boolean> completionStatus = new HashMap<>();
-            task.getCompletionStatus().forEach((user, status) -> 
-                completionStatus.put(user.getId(), status));
+            task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
             dto.setCompletionStatus(completionStatus);
 
             return dto;
@@ -288,5 +284,9 @@ public class TaskService {
         task = taskRepo.save(task);
 
         return getTask(taskId);
+    }
+
+    public Long getTaskCount() {
+        return taskRepo.count();
     }
 }

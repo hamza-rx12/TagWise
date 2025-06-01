@@ -11,7 +11,10 @@ import com.nli.tagwise.models.User;
 public interface IUserRepo extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String username);
+
     List<User> findByRole(Role role);
 
     List<User> findByRoleAndDeletedFalse(Role role);
+
+    Long countByRoleAndDeletedFalse(Role roleUser);
 }

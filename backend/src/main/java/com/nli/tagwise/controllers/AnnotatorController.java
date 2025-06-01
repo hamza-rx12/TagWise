@@ -25,6 +25,15 @@ public class AnnotatorController {
     private final PasswordEncoder passwordEncoder;
 
     /**
+     * Get count of annotators
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Long> getAnnotatorCount() {
+        Long count = userRepo.countByRoleAndDeletedFalse(Role.ROLE_USER);
+        return ResponseEntity.ok(count);
+    }
+
+    /**
      * Get all annotators (users with ROLE_USER)
      */
     @GetMapping

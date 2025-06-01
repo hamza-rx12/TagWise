@@ -220,4 +220,8 @@ public class DatasetService {
                         da.getAnnotator().isEnabled()))
                 .collect(Collectors.toList());
     }
+
+    public Long getDatasetCount() {
+        return datasetRepo.count();
+    }
 }

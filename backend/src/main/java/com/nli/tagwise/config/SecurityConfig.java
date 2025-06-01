@@ -40,10 +40,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/**").hasRole("USER")
+                        // .requestMatchers("/api/users/**").hasRole("USER")
                         .requestMatchers("/api/annotators/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/datasets/**").hasRole("ADMIN")
-                        .requestMatchers("/api/tasks/**").hasRole("USER")
+                        // .requestMatchers("/api/tasks/**").hasRole("USER")
                         .anyRequest().authenticated())
                 // on desactive les sessions car on utilise JWT
                 .sessionManagement(session -> session

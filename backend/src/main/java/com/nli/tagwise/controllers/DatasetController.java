@@ -29,6 +29,11 @@ public class DatasetController {
         // this.taskRepo = taskRepo;
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<Long> getDatasetCount() {
+        return ResponseEntity.ok(datasetService.getDatasetCount());
+    }
+
     @PostMapping("/upload")
     public ResponseEntity<Dataset> uploadDataset(
             @RequestParam("file") MultipartFile file,
