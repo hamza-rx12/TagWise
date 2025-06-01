@@ -46,13 +46,16 @@ function AdvancedOptions() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showSearchInput, setShowSearchInput] = useState(false);
 
-  
+
   // Selected dataset for modals
   const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
   const [selectedDatasetDetails, setSelectedDatasetDetails] = useState<DatasetDetails | null>(null);
   const [showMetricsModal, setShowMetricsModal] = useState(false);
   const [showSpammersModal, setShowSpammersModal] = useState(false);
+  const [showDatasetAnnotatorsModal, setShowDatasetAnnotatorsModal] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [selectedAnnotators, setSelectedAnnotators] = useState<number[]>([]);
+  const [searchAnnotatorQuery, setSearchAnnotatorQuery] = useState('');
 
   // Redirect if not authenticated or not an admin
   useEffect(() => {
@@ -150,6 +153,44 @@ function AdvancedOptions() {
     dataset.id.toString().includes(searchQuery)
   );
 
+  // Add remove annotators function
+  const handleRemoveAnnotators = async () => {
+    if (selectedAnnotators.length === 0) return;
+
+    try {
+      const response = await authenticatedFetch(
+        `http://localhost:8080/api/admin/datasets/${selectedDataset?.id}/annotators`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(selectedAnnotators),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to remove annotators');
+      }
+
+      // Refresh dataset details
+      if (selectedDataset) {
+        await fetchDatasetDetails(selectedDataset.id);
+      }
+
+      setSelectedAnnotators([]);
+      showNotification('Annotators removed successfully', 'success');
+    } catch (error) {
+      console.error('Error removing annotators:', error);
+      showNotification(error instanceof Error ? error.message : 'Failed to remove annotators', 'error');
+    }
+  };
+
+  // Filter annotators based on search
+  const filteredAnnotators = selectedDatasetDetails?.assignedAnnotators.filter(annotator =>
+    annotator.name.toLowerCase().includes(searchAnnotatorQuery.toLowerCase())
+  ) || [];
+
   return (
     <div className="font-poppins antialiased">
       <div className="h-full w-screen flex flex-row">
@@ -170,13 +211,13 @@ function AdvancedOptions() {
 
         {/* Sidebar */}
         <AdminSidebar
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        handleSearch={handleSearch}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleSearch={handleSearch}
         />
 
         {/* Main Content */}
@@ -209,77 +250,77 @@ function AdvancedOptions() {
                 <div className="flex items-center">
                 </div>
 
-<div className="flex items-center space-x-4">
-  <div className="relative">
-    {!showSearchInput ? (
-      <button
-        onClick={() => setShowSearchInput(true)}
-        className="text-gray-500 hover:text-teal-600 p-2 rounded-full transition-colors"
-      >
-        <svg
-          className="h-6 w-6"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-      </button>
-    ) : (
-      <div className="relative w-full">
-        <input
-          type="text"
-          placeholder="Search datasets..."
-          className="pl-10 pr-10 py-2 rounded-full border border-gray-300 transition-all duration-300 ease-in-out focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full md:w-64"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          autoFocus
-        />
-        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-          <svg
-            className="h-5 w-5"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    {!showSearchInput ? (
+                      <button
+                        onClick={() => setShowSearchInput(true)}
+                        className="text-gray-500 hover:text-teal-600 p-2 rounded-full transition-colors"
+                      >
+                        <svg
+                          className="h-6 w-6"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                      </button>
+                    ) : (
+                      <div className="relative w-full">
+                        <input
+                          type="text"
+                          placeholder="Search datasets..."
+                          className="pl-10 pr-10 py-2 rounded-full border border-gray-300 transition-all duration-300 ease-in-out focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full md:w-64"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          autoFocus
+                        />
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          <svg
+                            className="h-5 w-5"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                          </svg>
+                        </div>
 
-        <button
-          onClick={() => setShowSearchInput(false)}
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-red-500"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-    )}
-  </div>
-</div>
+                        <button
+                          onClick={() => setShowSearchInput(false)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-red-500"
+                        >
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
 
               </div>
@@ -412,15 +453,15 @@ function AdvancedOptions() {
       {showMetricsModal && selectedDataset && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           {/* Semi-transparent backdrop with blur effect */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/10 backdrop-blur-md"
             onClick={closeModals}
           ></div>
-          
+
           {/* Modal content */}
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-4 relative animate-fadeIn z-10 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl p-4 relative animate-fadeIn z-10 max-h-[90vh] overflow-y-auto">
             {/* Close button */}
-            <button 
+            <button
               onClick={closeModals}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
             >
@@ -428,7 +469,7 @@ function AdvancedOptions() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            
+
             {/* Modal header */}
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
@@ -436,7 +477,7 @@ function AdvancedOptions() {
               </h2>
               <p className="text-gray-500 mt-1">ID: #{selectedDataset.id}</p>
             </div>
-            
+
             {isLoadingDetails ? (
               <div className="flex flex-col justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-teal-500 mb-4"></div>
@@ -450,8 +491,8 @@ function AdvancedOptions() {
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Completion Rate</h3>
                     <div className="flex items-center">
                       <div className="w-full bg-gray-200 rounded-full h-4 mr-2">
-                        <div 
-                          className="bg-teal-500 h-4 rounded-full" 
+                        <div
+                          className="bg-teal-500 h-4 rounded-full"
                           style={{ width: `${selectedDatasetDetails.completionPercentage}%` }}
                         ></div>
                       </div>
@@ -460,13 +501,13 @@ function AdvancedOptions() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Classes</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedDatasetDetails.classes.split(';').map((cls, index) => (
-                        <span 
-                          key={index} 
+                        <span
+                          key={index}
                           className="px-2 py-1 bg-teal-100 text-teal-800 text-xs font-medium rounded"
                         >
                           {cls}
@@ -474,14 +515,14 @@ function AdvancedOptions() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Description</h3>
                     <p className="text-sm text-gray-700">
                       {selectedDatasetDetails.description || "No description available."}
                     </p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Total Pairs</h3>
                     <p className="text-2xl font-bold text-teal-600">
@@ -489,7 +530,7 @@ function AdvancedOptions() {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Sample pairs */}
                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Sample Text Pairs</h3>
@@ -510,7 +551,7 @@ function AdvancedOptions() {
                     ))}
                   </div>
                 </div>
-                
+
                 {/* Assigned annotators */}
                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Assigned Annotators</h3>
@@ -548,7 +589,7 @@ function AdvancedOptions() {
                     </table>
                   </div>
                 </div>
-                
+
                 {/* Action buttons */}
                 <div className="flex justify-end space-x-3">
                   <button
@@ -590,15 +631,15 @@ function AdvancedOptions() {
       {showSpammersModal && selectedDataset && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           {/* Semi-transparent backdrop with blur effect */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/10 backdrop-blur-md"
             onClick={closeModals}
           ></div>
-          
+
           {/* Modal content */}
           <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-6 relative animate-fadeIn z-10">
             {/* Close button */}
-            <button 
+            <button
               onClick={closeModals}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
             >
@@ -606,7 +647,7 @@ function AdvancedOptions() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            
+
             {/* Modal header */}
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
@@ -614,7 +655,7 @@ function AdvancedOptions() {
               </h2>
               <p className="text-gray-500 mt-1">ID: #{selectedDataset.id}</p>
             </div>
-            
+
             {isLoadingDetails ? (
               <div className="flex flex-col justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-teal-500 mb-4"></div>
@@ -638,7 +679,7 @@ function AdvancedOptions() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Annotators table with potential spammer indicators */}
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -678,13 +719,13 @@ function AdvancedOptions() {
                             'Medium': 'Unusually fast annotation speed',
                             'High': 'Inconsistent labeling patterns'
                           }[riskLevel];
-                          
+
                           // Get initials for avatar
                           const nameParts = annotator.name.split(' ');
-                          const initials = nameParts.length > 1 
+                          const initials = nameParts.length > 1
                             ? `${nameParts[0][0]}${nameParts[1][0]}`
                             : nameParts[0].substring(0, 2);
-                            
+
                           return (
                             <tr key={annotator.id} className="hover:bg-gray-50">
                               <td className="px-6 py-4 whitespace-nowrap">
@@ -727,7 +768,7 @@ function AdvancedOptions() {
                     </table>
                   </div>
                 </div>
-                
+
                 {/* Action buttons */}
                 <div className="flex justify-between">
                   <button
@@ -743,7 +784,7 @@ function AdvancedOptions() {
                     </svg>
                     Run Detection
                   </button>
-                  
+
                   <div>
                     <button
                       onClick={closeModals}
@@ -764,6 +805,190 @@ function AdvancedOptions() {
                       Export Report
                     </button>
                   </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No details available</h3>
+                <p className="text-gray-500 text-center max-w-md">
+                  Could not load details for this dataset. Please try again later.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Dataset Annotators Modal */}
+      {selectedDataset && showDatasetAnnotatorsModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          {/* Semi-transparent backdrop with blur effect */}
+          <div
+            className="absolute inset-0 bg-black/10 backdrop-blur-md"
+            onClick={closeModals}
+          ></div>
+
+          {/* Modal content */}
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 relative animate-fadeIn z-10">
+            {/* Close button */}
+            <button
+              onClick={closeModals}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Modal header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Dataset Annotators: {selectedDataset.name}
+              </h2>
+              <p className="text-gray-500 mt-1">ID: #{selectedDataset.id}</p>
+            </div>
+
+            {isLoadingDetails ? (
+              <div className="flex flex-col justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-teal-500 mb-4"></div>
+                <p className="text-gray-500">Loading dataset details...</p>
+              </div>
+            ) : selectedDatasetDetails ? (
+              <>
+                {/* Search and selection controls */}
+                <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                  <div className="relative flex-1 max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Search annotators..."
+                      value={searchAnnotatorQuery}
+                      onChange={(e) => setSearchAnnotatorQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                    <svg
+                      className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => {
+                        if (selectedAnnotators.length === filteredAnnotators.length) {
+                          setSelectedAnnotators([]);
+                        } else {
+                          setSelectedAnnotators(filteredAnnotators.map(a => parseInt(a.id)));
+                        }
+                      }}
+                      className="text-sm text-teal-600 hover:text-teal-800"
+                    >
+                      {selectedAnnotators.length === filteredAnnotators.length
+                        ? 'Deselect All'
+                        : 'Select All'}
+                    </button>
+                    <span className="text-sm text-gray-500">
+                      {selectedAnnotators.length} selected
+                    </span>
+                  </div>
+                </div>
+
+                {/* Annotators list */}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={selectedAnnotators.length === filteredAnnotators.length}
+                            onChange={() => {
+                              if (selectedAnnotators.length === filteredAnnotators.length) {
+                                setSelectedAnnotators([]);
+                              } else {
+                                setSelectedAnnotators(filteredAnnotators.map(a => parseInt(a.id)));
+                              }
+                            }}
+                            className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                          />
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Annotator
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Completed Tasks
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredAnnotators.map((annotator) => (
+                        <tr key={annotator.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedAnnotators.includes(parseInt(annotator.id))}
+                              onChange={() => {
+                                const annotatorId = parseInt(annotator.id);
+                                setSelectedAnnotators(prev =>
+                                  prev.includes(annotatorId)
+                                    ? prev.filter(id => id !== annotatorId)
+                                    : [...prev, annotatorId]
+                                );
+                              }}
+                              className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{annotator.name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="text-sm text-gray-900">{annotator.completedTasks}</div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredAnnotators.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                            No annotators found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={closeModals}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleRemoveAnnotators}
+                    disabled={selectedAnnotators.length === 0}
+                    className={`px-4 py-2 rounded-md transition-colors flex items-center ${selectedAnnotators.length === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-red-500 hover:bg-red-600 text-white'
+                      }`}
+                  >
+                    <svg className="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Remove Selected
+                  </button>
                 </div>
               </>
             ) : (

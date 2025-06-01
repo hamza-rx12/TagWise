@@ -197,6 +197,15 @@ export type DatasetDetails = {
     assignedAnnotators: any[];
 };
 
+export interface Annotator {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    enabled: boolean;
+}
+
 export const adminApi = {
     getDatasets: async () => {
         const response = await authenticatedFetch(`${ADMIN_API}/datasets/list`);
@@ -242,4 +251,27 @@ export const adminApi = {
             throw new Error('Failed to assign annotators. Please try again.');
         }
     },
+
+    getUnassignedAnnotators: async (datasetId: number) => {
+        const response = await authenticatedFetch(`${ADMIN_API}/datasets/${datasetId}/unassigned-annotators`);
+        return handleResponse<any[]>(response);
+    },
+
+    getAssignedAnnotators: async (datasetId: number) => {
+        const response = await authenticatedFetch(`${ADMIN_API}/datasets/${datasetId}/unassigned-annotators`);
+        return handleResponse<any[]>(response);
+    },
+
+    getDatasetAnnotators: async (datasetId: number): Promise<Annotator[]> => {
+        const response = await authenticatedFetch(`${ADMIN_API}/datasets/${datasetId}/annotators`);
+        return handleResponse<Annotator[]>(response);
+    },
+
+    removeAnnotators: async ({ datasetId, annotatorIds }: { datasetId: number; annotatorIds: number[] }): Promise<void> => {
+        const response = await authenticatedFetch(`${ADMIN_API}/datasets/${datasetId}/annotators`, {
+            method: 'DELETE',
+            body: JSON.stringify(annotatorIds)
+        });
+        return handleResponse<void>(response);
+    }
 };
