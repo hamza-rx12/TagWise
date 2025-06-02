@@ -1,28 +1,49 @@
 package com.nli.tagwise.controllers;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import com.nli.tagwise.dto.AnnotatorDto;
 import com.nli.tagwise.dto.SignUpDto; // Reusing existing DTO
 import com.nli.tagwise.models.Gender;
 import com.nli.tagwise.models.Role;
 import com.nli.tagwise.models.User;
+import com.nli.tagwise.repository.ITaskRepo;
 import com.nli.tagwise.repository.IUserRepo;
-
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/annotators")
-@PreAuthorize("hasRole('ROLE_ADMIN')") // Only admins can access this controller
-@RequiredArgsConstructor
 public class AnnotatorController {
 
     private final IUserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final ITaskRepo taskRepo;
+
+    public AnnotatorController(IUserRepo userRepo, ITaskRepo taskRepo, PasswordEncoder passwordEncoder) {
+        this.userRepo = userRepo;
+        this.passwordEncoder = passwordEncoder;
+        this.taskRepo = taskRepo;
+    }
+
+    /**
+     * Get the 3 most recently added annotators
+     */
+    @GetMapping("/recent")
+    public ResponseEntity<List<AnnotatorDto>> getRecentAnnotators() {
+        List<User> recentAnnotators = userRepo.findTop3ByRoleAndDeletedFalseOrderByIdDesc(Role.ROLE_USER);
+        List<AnnotatorDto> annotatorDtos = recentAnnotators.stream()
+                .map(annotator -> new AnnotatorDto(
+                        annotator.getId(),
+                        annotator.getFirstName() + " " + annotator.getLastName(),
+                        annotator.getEmail(),
+                        taskRepo.countCompletedTasksByAnnotator(annotator)))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(annotatorDtos);
+    }
 
     /**
      * Get count of annotators

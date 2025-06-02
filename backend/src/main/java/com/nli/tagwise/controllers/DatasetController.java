@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/datasets")
@@ -27,6 +28,20 @@ public class DatasetController {
     public DatasetController(DatasetService datasetService) {
         this.datasetService = datasetService;
         // this.taskRepo = taskRepo;
+    }
+
+    @GetMapping("/recent")
+    public ResponseEntity<List<DatasetDto>> getRecentDatasets() {
+        List<Dataset> recentDatasets = datasetService.getRecentDatasets(3);
+
+        List<DatasetDto> datasetDtos = recentDatasets.stream()
+                .map(dataset -> new DatasetDto(
+                        dataset.getName(),
+                        dataset.getDescription(),
+                        dataset.getClasses(),
+                        dataset.getTasks() != null ? dataset.getTasks().size() : 0))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(datasetDtos);
     }
 
     @GetMapping("/count")

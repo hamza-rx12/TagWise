@@ -164,7 +164,8 @@ public class DatasetService {
             }
         }
 
-        return new DatasetDto(dataset.getName(), dataset.getDescription(), dataset.getClasses());
+        return new DatasetDto(dataset.getName(), dataset.getDescription(), dataset.getClasses(),
+                dataset.getTasks().size());
     }
 
     public List<DatasetListDto> listDatasetDtos() {
@@ -201,7 +202,8 @@ public class DatasetService {
                 .map(da -> new AnnotatorDto(
                         da.getAnnotator().getId(),
                         da.getAnnotator().getFirstName() + " " + da.getAnnotator().getLastName(),
-                        (int) taskRepo.countCompletedTasksByDatasetAndAnnotator(dataset, da.getAnnotator())))
+                        da.getAnnotator().getEmail(),
+                        taskRepo.countCompletedTasksByDatasetAndAnnotator(dataset, da.getAnnotator())))
                 .collect(Collectors.toList()));
 
         return response;
@@ -223,5 +225,12 @@ public class DatasetService {
 
     public Long getDatasetCount() {
         return datasetRepo.count();
+    }
+
+    public List<Dataset> getRecentDatasets(int limit) {
+        return datasetRepo.findAll().stream()
+                .sorted((d1, d2) -> d2.getId().compareTo(d1.getId()))
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 }

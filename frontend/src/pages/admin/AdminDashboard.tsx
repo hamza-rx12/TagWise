@@ -8,18 +8,15 @@ import { adminApi } from '../../utils/api';
 
 // Example types
 type Annotator = {
-    id: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
+    completedTasks: number;
 };
 
 type Dataset = {
-    id: string;
     name: string;
-    description: string;
-    itemCount: number;
-    createdAt: string;
+    classes: string;
+    taskCount: number;
 };
 
 type Stats = {
@@ -58,18 +55,22 @@ const AdminDashboard: React.FC = () => {
             try {
                 setLoading(true);
                 // Fetch real data from API
-                const [annotatorCount, datasetCount, taskCount, completedTaskCount] = await Promise.all([
+                const [annotatorCount, datasetCount, taskCount, completedTaskCount, recentDatasetsData, recentAnnotatorsData] = await Promise.all([
                     adminApi.getAnnotatorCount(),
                     adminApi.getDatasetCount(),
                     adminApi.getTaskCount(),
-                    adminApi.getCompletedTaskCount()
+                    adminApi.getCompletedTaskCount(),
+                    adminApi.getRecentDatasets(),
+                    adminApi.getRecentAnnotators()
                 ]);
 
                 console.log('API Responses:', {
                     annotatorCount,
                     datasetCount,
                     taskCount,
-                    completedTaskCount
+                    completedTaskCount,
+                    recentDatasetsData,
+                    recentAnnotatorsData
                 });
 
                 // Update stats with real data
@@ -83,45 +84,12 @@ const AdminDashboard: React.FC = () => {
                 console.log('New Stats:', newStats);
                 setStats(newStats);
 
-                // Mock data for recent annotators
-                setRecentAnnotators([
-                    {
-                        id: '1',
-                        firstName: 'John',
-                        lastName: 'Doe',
-                        email: 'john.doe@example.com'
-                    },
-                    {
-                        id: '2',
-                        firstName: 'Jane',
-                        lastName: 'Smith',
-                        email: 'jane.smith@example.com'
-                    },
-                    {
-                        id: '3',
-                        firstName: 'Bob',
-                        lastName: 'Johnson',
-                        email: 'bob.johnson@example.com'
-                    }
-                ]);
+                // Set recent datasets from API
+                setRecentDatasets(recentDatasetsData);
 
-                // Mock data for recent datasets
-                setRecentDatasets([
-                    {
-                        id: '1',
-                        name: 'Image Classification Dataset',
-                        description: 'A collection of images for classification',
-                        itemCount: 1000,
-                        createdAt: '2023-12-01'
-                    },
-                    {
-                        id: '2',
-                        name: 'Text Sentiment Analysis',
-                        description: 'Text data for sentiment analysis',
-                        itemCount: 500,
-                        createdAt: '2023-11-15'
-                    }
-                ]);
+                // Set recent annotators from API
+                setRecentAnnotators(recentAnnotatorsData);
+
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -264,23 +232,18 @@ const AdminDashboard: React.FC = () => {
                                                 <tr>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Tasks</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200">
                                                 {recentAnnotators.map((annotator, idx) => (
-                                                    <tr key={annotator.id} style={{ animationDelay: `${idx * 0.05}s`, animation: 'fadeIn 0.5s ease-out forwards', opacity: 0 }}>
-                                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                            {annotator.firstName} {annotator.lastName}
-                                                        </td>
+                                                    <tr key={annotator.email} style={{ animationDelay: `${idx * 0.05}s`, animation: 'fadeIn 0.5s ease-out forwards', opacity: 0 }}>
+                                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{annotator.name}</td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">{annotator.email}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                            <button
-                                                                onClick={() => navigate(`/admin/edit-annotator/${annotator.id}`)}
-                                                                className="text-teal-600 hover:text-teal-900 font-medium"
-                                                            >
-                                                                Edit
-                                                            </button>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                                {annotator.completedTasks} tasks
+                                                            </span>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -330,17 +293,30 @@ const AdminDashboard: React.FC = () => {
                                             <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                                 <tr>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classes</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tasks</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200">
                                                 {recentDatasets.map((dataset, idx) => (
-                                                    <tr key={dataset.id} style={{ animationDelay: `${idx * 0.05}s`, animation: 'fadeIn 0.5s ease-out forwards', opacity: 0 }}>
+                                                    <tr key={dataset.name} style={{ animationDelay: `${idx * 0.05}s`, animation: 'fadeIn 0.5s ease-out forwards', opacity: 0 }}>
                                                         <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{dataset.name}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">{dataset.itemCount}</td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {dataset.classes.split(';').map((cls, index) => (
+                                                                    <span
+                                                                        key={index}
+                                                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800"
+                                                                    >
+                                                                        {cls.trim()}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                                                            {new Date(dataset.createdAt).toLocaleDateString()}
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                {dataset.taskCount} tasks
+                                                            </span>
                                                         </td>
                                                     </tr>
                                                 ))}

@@ -14,6 +14,7 @@ public class DatasetDto {
     private String name;
     private String description;
     private String classes;
+    private int taskCount;
     // private MultipartFile file;
     // private String filePath; // Path to uploaded file
     // private boolean isNliDataset; // New field

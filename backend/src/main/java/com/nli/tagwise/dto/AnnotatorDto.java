@@ -1,18 +1,16 @@
 package com.nli.tagwise.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@AllArgsConstructor
 public class AnnotatorDto {
     private Long id;
     private String name;
-    private int completedTasks;
+    private String email;
+    private Long completedTasks;
 
-    public AnnotatorDto(Long id, String name, int completedTasks) {
-        this.id = id;
-        this.name = name;
-        this.completedTasks = completedTasks;
-    }
 }

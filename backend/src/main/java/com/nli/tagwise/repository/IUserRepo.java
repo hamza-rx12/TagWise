@@ -17,4 +17,6 @@ public interface IUserRepo extends JpaRepository<User, Long> {
     List<User> findByRoleAndDeletedFalse(Role role);
 
     Long countByRoleAndDeletedFalse(Role roleUser);
+
+    List<User> findTop3ByRoleAndDeletedFalseOrderByIdDesc(Role role);
 }

@@ -98,6 +98,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
         });
         throw new Error(errorData.message || `API error: ${response.status} ${response.statusText}`);
     }
+
+    // Handle 204 No Content response
+    if (response.status === 204) {
+        return {} as T;
+    }
+
     const data = await response.json();
     console.log('API Response Data:', {
         url: response.url,
@@ -131,6 +137,14 @@ export const authApi = {
 
     signup: async (data: SignupData) => {
         const response = await authenticatedFetch(`${AUTH_API}/signup`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        return handleResponse<{ message: string }>(response);
+    },
+
+    changePassword: async (data: { currentPassword: string; newPassword: string }) => {
+        const response = await authenticatedFetch(`${AUTH_API}/change-password`, {
             method: 'POST',
             body: JSON.stringify(data),
         });
@@ -181,6 +195,26 @@ export const annotatorApi = {
         });
         return handleResponse<any>(response);
     },
+
+    // New endpoints for annotator management
+    getAllAnnotators: async () => {
+        const response = await authenticatedFetch(`${ANNOTATORS_API}`);
+        return handleResponse<Annotator[]>(response);
+    },
+
+    deleteAnnotator: async (id: string) => {
+        const response = await authenticatedFetch(`${ANNOTATORS_API}/${id}`, {
+            method: 'DELETE',
+        });
+        return handleResponse<void>(response);
+    },
+
+    updateAnnotatorStatus: async (id: string, enabled: boolean) => {
+        const response = await authenticatedFetch(`${ANNOTATORS_API}/${id}/status?enabled=${enabled}`, {
+            method: 'PATCH',
+        });
+        return handleResponse<void>(response);
+    },
 };
 
 // ==================== Admin API ====================
@@ -203,18 +237,30 @@ export type DatasetDetails = {
 };
 
 export interface Annotator {
-    id: number;
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
+    gender: string;
     role: string;
     enabled: boolean;
+    deleted?: boolean;
 }
 
 export const adminApi = {
     getDatasets: async () => {
         const response = await authenticatedFetch(`${ADMIN_API}/datasets/list`);
         return handleResponse<Dataset[]>(response);
+    },
+
+    getRecentAnnotators: async () => {
+        const response = await authenticatedFetch(`${ANNOTATORS_API}/recent`);
+        return handleResponse<Array<{ name: string; email: string; completedTasks: number }>>(response);
+    },
+
+    getRecentDatasets: async () => {
+        const response = await authenticatedFetch(`${ADMIN_API}/datasets/recent`);
+        return handleResponse<Array<{ name: string; classes: string; taskCount: number }>>(response);
     },
 
     getDatasetCount: async () => {
@@ -302,5 +348,37 @@ export const adminApi = {
             body: JSON.stringify(annotatorIds)
         });
         return handleResponse<void>(response);
-    }
+    },
+
+    // Advanced Options
+    getAdvancedOptions: async (): Promise<{
+        annotatorRegistrationEnabled: boolean;
+        annotatorLoginEnabled: boolean;
+        annotatorProfileUpdateEnabled: boolean;
+    }> => {
+        const response = await authenticatedFetch(`${ADMIN_API}/advanced-options`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        return handleResponse(response);
+    },
+
+    updateAdvancedOptions: async (options: {
+        annotatorRegistrationEnabled: boolean;
+        annotatorLoginEnabled: boolean;
+        annotatorProfileUpdateEnabled: boolean;
+    }): Promise<void> => {
+        const response = await authenticatedFetch(`${ADMIN_API}/advanced-options`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(options)
+        });
+        return handleResponse(response);
+    },
 };

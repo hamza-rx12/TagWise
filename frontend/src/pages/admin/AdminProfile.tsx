@@ -1,7 +1,7 @@
 import { useAuth } from '../../context/AuthContext';
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
-import { authenticatedFetch } from '../../utils/api';
+import { annotatorApi, authApi } from '../../utils/api';
 
 const AdminProfile: React.FC = () => {
     const { user } = useAuth();
@@ -15,6 +15,9 @@ const AdminProfile: React.FC = () => {
         firstName: '',
         lastName: '',
         gender: '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
     });
 
     // Initialize form with user data when component mounts
@@ -24,6 +27,9 @@ const AdminProfile: React.FC = () => {
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 gender: user.gender || '',
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
             });
         }
     }, [user]);
@@ -40,7 +46,7 @@ const AdminProfile: React.FC = () => {
         e.preventDefault();
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
@@ -55,6 +61,9 @@ const AdminProfile: React.FC = () => {
             firstName: user.firstName || '',
             lastName: user.lastName || '',
             gender: user.gender || '',
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
         });
     };
 
@@ -64,21 +73,37 @@ const AdminProfile: React.FC = () => {
         setError(null);
 
         try {
-            const response = await authenticatedFetch(`http://localhost:8080/api/v1/annotators/${user?.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    firstName: form.firstName,
-                    lastName: form.lastName,
-                    gender: form.gender,
-                }),
-            });
+            // If password fields are filled, validate and update password
+            if (form.newPassword) {
+                if (form.newPassword !== form.confirmPassword) {
+                    setError('New passwords do not match');
+                    setIsLoading(false);
+                    return;
+                }
+                if (form.newPassword.length < 8) {
+                    setError('New password must be at least 8 characters long');
+                    setIsLoading(false);
+                    return;
+                }
+                if (!form.currentPassword) {
+                    setError('Current password is required to set a new password');
+                    setIsLoading(false);
+                    return;
+                }
 
-            if (!response.ok) {
-                throw new Error('Failed to update profile');
+                // Update password
+                await authApi.changePassword({
+                    currentPassword: form.currentPassword,
+                    newPassword: form.newPassword,
+                });
             }
+
+            // Update profile information
+            await annotatorApi.updateAnnotator(user.id, {
+                firstName: form.firstName,
+                lastName: form.lastName,
+                gender: form.gender,
+            });
 
             // Update the local user state
             if (user) {
@@ -88,9 +113,16 @@ const AdminProfile: React.FC = () => {
             }
 
             setIsEditing(false);
+            // Clear password fields
+            setForm(prev => ({
+                ...prev,
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+            }));
         } catch (error) {
             console.error('Error updating profile:', error);
-            setError('Failed to update profile. Please try again.');
+            setError(error instanceof Error ? error.message : 'Failed to update profile');
         } finally {
             setIsLoading(false);
         }
@@ -183,7 +215,7 @@ const AdminProfile: React.FC = () => {
                                                 name="gender"
                                                 className="ml-2 px-2 py-1 border rounded text-gray-700 flex-1"
                                                 value={form.gender}
-                                                onChange={(e) => setForm(prev => ({ ...prev, gender: e.target.value }))}
+                                                onChange={handleChange}
                                                 required
                                             >
                                                 <option value="">Select Gender</option>
@@ -196,24 +228,62 @@ const AdminProfile: React.FC = () => {
                                             </span>
                                         )}
                                     </div>
+
                                     {isEditing && (
-                                        <div className="mt-4 flex gap-2">
-                                            <button
-                                                type="submit"
-                                                className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 transition disabled:opacity-50"
-                                                disabled={isLoading}
-                                            >
-                                                {isLoading ? 'Saving...' : 'Save'}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition"
-                                                onClick={handleCancel}
-                                                disabled={isLoading}
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
+                                        <>
+                                            <div className="mt-6 pt-6 border-t border-gray-200">
+                                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Change Password (Optional)</h3>
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center">
+                                                        <span className="font-semibold text-gray-700 w-28">Current Password:</span>
+                                                        <input
+                                                            name="currentPassword"
+                                                            type="password"
+                                                            className="ml-2 px-2 py-1 border rounded text-gray-700 flex-1"
+                                                            value={form.currentPassword}
+                                                            onChange={handleChange}
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className="font-semibold text-gray-700 w-28">New Password:</span>
+                                                        <input
+                                                            name="newPassword"
+                                                            type="password"
+                                                            className="ml-2 px-2 py-1 border rounded text-gray-700 flex-1"
+                                                            value={form.newPassword}
+                                                            onChange={handleChange}
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className="font-semibold text-gray-700 w-28">Confirm Password:</span>
+                                                        <input
+                                                            name="confirmPassword"
+                                                            type="password"
+                                                            className="ml-2 px-2 py-1 border rounded text-gray-700 flex-1"
+                                                            value={form.confirmPassword}
+                                                            onChange={handleChange}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 flex gap-2">
+                                                <button
+                                                    type="submit"
+                                                    className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 transition disabled:opacity-50"
+                                                    disabled={isLoading}
+                                                >
+                                                    {isLoading ? 'Saving...' : 'Save Changes'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition"
+                                                    onClick={handleCancel}
+                                                    disabled={isLoading}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
                                 </form>
                             </div>
