@@ -20,6 +20,8 @@ public class TaskDto {
     private String text2;
     private List<String> annotations;
     private Map<Long, Boolean> completionStatus;
+    private Map<String, Object> metadata; // Added for isNewAssignment and datasetName
+
 
     // Constructor for creating a new task
     public TaskDto(Long datasetId, List<Long> annotatorIds, String text1, String text2) {

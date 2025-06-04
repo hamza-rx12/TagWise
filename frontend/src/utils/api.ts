@@ -170,6 +170,12 @@ export const authApi = {
 
 // ==================== Annotator API ====================
 export type Task = {
+    datasetId(datasetId: any): unknown;
+    completionStatus: any;
+    annotations: any;
+    text1: any;
+    text2: any;
+    metadata: any;
     id: string;
     title: string;
     description: string;
@@ -188,7 +194,7 @@ export const annotatorApi = {
         return handleResponse<any>(response);
     },
 
-    updateAnnotator: async (id: string, data: any) => {
+    updateAnnotator: async (id: string, data: any, annotation: any) => {
         const response = await authenticatedFetch(`${ANNOTATORS_API}/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),

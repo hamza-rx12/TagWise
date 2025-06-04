@@ -1,9 +1,11 @@
 package com.nli.tagwise.controllers;
 
 import com.nli.tagwise.dto.TaskDto;
+import com.nli.tagwise.models.UserDetailsImpl;
 import com.nli.tagwise.services.TaskService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -57,6 +59,15 @@ public class TaskController {
     @GetMapping("/annotator/{annotatorId}")
     public ResponseEntity<List<TaskDto>> getTasksForAnnotator(@PathVariable Long annotatorId) {
         return ResponseEntity.ok(taskService.getTasksForAnnotator(annotatorId));
+    }
+
+    /**
+     * Get all tasks for the currently authenticated annotator
+     */
+    @GetMapping("/annotator/my-tasks")
+    public ResponseEntity<List<TaskDto>> getCurrentUserTasks(
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return ResponseEntity.ok(taskService.getTasksForAnnotator(userDetails.getUser().getId()));
     }
 
     /**

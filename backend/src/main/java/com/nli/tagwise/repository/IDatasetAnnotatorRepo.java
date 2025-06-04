@@ -9,8 +9,8 @@ import java.util.List;
 
 public interface IDatasetAnnotatorRepo extends JpaRepository<DatasetAnnotator, Long> {
     List<DatasetAnnotator> findByDataset(Dataset dataset);
-
     List<DatasetAnnotator> findByAnnotator(User annotator);
 
+    void deleteByDataset(Dataset dataset);
     void deleteByDatasetAndAnnotator(Dataset dataset, User annotator);
 }

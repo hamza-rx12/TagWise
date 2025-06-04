@@ -13,10 +13,7 @@ import com.nli.tagwise.repository.IUserRepo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +24,7 @@ public class TaskService {
     private final IDatasetAnnotatorRepo datasetAnnotatorRepo;
 
     public TaskService(ITaskRepo taskRepo, IDatasetRepo datasetRepo, IUserRepo userRepo,
-            IDatasetAnnotatorRepo datasetAnnotatorRepo) {
+                       IDatasetAnnotatorRepo datasetAnnotatorRepo) {
         this.taskRepo = taskRepo;
         this.datasetRepo = datasetRepo;
         this.userRepo = userRepo;
@@ -38,52 +35,55 @@ public class TaskService {
     public void assignAnnotators(AssignAnnotatorDto dto) {
         Dataset dataset = datasetRepo.findById(dto.getDatasetId())
                 .orElseThrow(() -> new IllegalArgumentException("Dataset not found"));
-        User annotator = userRepo.findById(dto.getAnnotatorId())
+        User newAnnotator = userRepo.findById(dto.getAnnotatorId())
                 .orElseThrow(() -> new IllegalArgumentException("Annotator not found"));
 
-        // Create DatasetAnnotator mapping
+        // Crée ou met à jour le lien DatasetAnnotator
         DatasetAnnotator datasetAnnotator = new DatasetAnnotator();
         datasetAnnotator.setDataset(dataset);
-        datasetAnnotator.setAnnotator(annotator);
+        datasetAnnotator.setAnnotator(newAnnotator);
         datasetAnnotatorRepo.save(datasetAnnotator);
 
-        // Get existing tasks for this dataset or create new ones
+        // Récupère tous les annotateurs déjà assignés à ce dataset
+        List<DatasetAnnotator> datasetAnnotators = datasetAnnotatorRepo.findByDataset(dataset);
+        List<User> annotators = datasetAnnotators.stream()
+                .map(DatasetAnnotator::getAnnotator)
+                .collect(Collectors.toList());
+
+        // Récupère les tâches existantes pour ce dataset
         List<Task> existingTasks = taskRepo.findByDataset(dataset);
 
-        if (existingTasks.isEmpty()) {
-            // Generate new tasks for this dataset
-            List<Task> newTasks = generateTasksFromDataset(dataset);
-
-            // Add the annotator to each task
-            for (Task task : newTasks) {
-                task.addAnnotator(annotator);
-            }
-
-            taskRepo.saveAll(newTasks);
-        } else {
-            // Add this annotator to existing tasks
-            for (Task task : existingTasks) {
-                task.addAnnotator(annotator);
-            }
-
+        // Si aucune tâche, rien à répartir (elles sont créées lors de l'import du dataset)
+        if (!existingTasks.isEmpty()) {
+            divideTasksAmongAnnotators(existingTasks, annotators);
             taskRepo.saveAll(existingTasks);
         }
     }
 
-    private List<Task> generateTasksFromDataset(Dataset dataset) {
-        // Placeholder: Parse dataset file and create text pairs
-        List<Task> tasks = new ArrayList<>();
+    private void divideTasksAmongAnnotators(List<Task> tasks, List<User> annotators) {
+        if (annotators.isEmpty() || tasks.isEmpty()) return;
 
-        // In a real implementation, this would parse the dataset file
-        // and create tasks based on the content
+        // Réinitialise les assignations
+        for (Task task : tasks) {
+            task.getAnnotators().clear();
+            task.getCompletionStatus().clear();
+        }
 
-        Task task = new Task();
-        task.setDataset(dataset);
-        task.setText1("Sample text 1");
-        task.setText2("Sample text 2");
-        tasks.add(task);
+        int numAnnotators = annotators.size();
+        int tasksPerAnnotator = tasks.size() / numAnnotators;
+        int extraTasks = tasks.size() % numAnnotators;
 
-        return tasks;
+        int taskIndex = 0;
+        for (int i = 0; i < numAnnotators; i++) {
+            User annotator = annotators.get(i);
+            int tasksForThisAnnotator = tasksPerAnnotator + (extraTasks > 0 ? 1 : 0);
+            if (extraTasks > 0) extraTasks--;
+
+            for (int j = 0; j < tasksForThisAnnotator && taskIndex < tasks.size(); j++) {
+                Task task = tasks.get(taskIndex++);
+                task.addAnnotator(annotator);
+            }
+        }
     }
 
     @Transactional
@@ -100,7 +100,7 @@ public class TaskService {
 
         datasetAnnotatorRepo.delete(datasetAnnotator);
 
-        // Remove annotator from tasks but keep the tasks
+        // Retire l'annotateur des tâches mais conserve les tâches
         List<Task> tasks = taskRepo.findByDatasetAndAnnotator(dataset, annotator);
         for (Task task : tasks) {
             task.getAnnotators().remove(annotator);
@@ -122,12 +122,21 @@ public class TaskService {
             dto.setDatasetId(task.getDataset().getId());
             dto.setText1(task.getText1());
             dto.setText2(task.getText2());
+            dto.setAnnotations(task.getAnnotations() != null ? task.getAnnotations() : new ArrayList<>());
 
-            // Get completion status for this annotator
-            Boolean completed = task.getCompletionStatus().get(annotator);
-            Map<Long, Boolean> completionStatus = new HashMap<>();
-            completionStatus.put(annotatorId, completed != null ? completed : false);
-            dto.setCompletionStatus(completionStatus);
+            // Completion status
+            Map<Long, Boolean> status = new HashMap<>();
+            Boolean completed = task.getCompletionStatus() != null
+                    ? task.getCompletionStatus().get(annotator)
+                    : false;
+            status.put(annotatorId, completed != null ? completed : false);
+            dto.setCompletionStatus(status);
+
+            // Metadata
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("datasetName", task.getDataset().getName());
+            metadata.put("isNewAssignment", completed == null);
+            dto.setMetadata(metadata);
 
             return dto;
         }).collect(Collectors.toList());
@@ -147,18 +156,16 @@ public class TaskService {
             dto.setText1(task.getText1());
             dto.setText2(task.getText2());
 
-            // Get all annotator IDs
             List<Long> annotatorIds = task.getAnnotators().stream()
                     .map(User::getId)
                     .collect(Collectors.toList());
             dto.setAnnotatorIds(annotatorIds);
 
-            // Get all annotations
             dto.setAnnotations(task.getAnnotations());
 
-            // Get completion status for all annotators
             Map<Long, Boolean> completionStatus = new HashMap<>();
-            task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
+            task.getCompletionStatus().forEach((user, status) ->
+                    completionStatus.put(user.getId(), status));
             dto.setCompletionStatus(completionStatus);
 
             return dto;
@@ -172,38 +179,31 @@ public class TaskService {
         User annotator = userRepo.findById(annotatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Annotator not found"));
 
-        // Check if this annotator is assigned to this task
         if (!task.getAnnotators().contains(annotator)) {
             throw new IllegalArgumentException("Annotator not assigned to this task");
         }
 
-        // Add the annotation
         task.addAnnotation(annotation);
-
-        // Mark as completed for this annotator
         task.setAnnotatorCompletionStatus(annotator, true);
 
         task = taskRepo.save(task);
 
-        // Create and return DTO
         TaskDto dto = new TaskDto();
         dto.setId(task.getId());
         dto.setDatasetId(task.getDataset().getId());
         dto.setText1(task.getText1());
         dto.setText2(task.getText2());
 
-        // Get all annotator IDs
         List<Long> annotatorIds = task.getAnnotators().stream()
                 .map(User::getId)
                 .collect(Collectors.toList());
         dto.setAnnotatorIds(annotatorIds);
 
-        // Get all annotations
         dto.setAnnotations(task.getAnnotations());
 
-        // Get completion status for all annotators
         Map<Long, Boolean> completionStatus = new HashMap<>();
-        task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
+        task.getCompletionStatus().forEach((user, status) ->
+                completionStatus.put(user.getId(), status));
         dto.setCompletionStatus(completionStatus);
 
         return dto;
@@ -220,26 +220,21 @@ public class TaskService {
         dto.setText1(task.getText1());
         dto.setText2(task.getText2());
 
-        // Get all annotator IDs
         List<Long> annotatorIds = task.getAnnotators().stream()
                 .map(User::getId)
                 .collect(Collectors.toList());
         dto.setAnnotatorIds(annotatorIds);
 
-        // Get all annotations
         dto.setAnnotations(task.getAnnotations());
 
-        // Get completion status for all annotators
         Map<Long, Boolean> completionStatus = new HashMap<>();
-        task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
+        task.getCompletionStatus().forEach((user, status) ->
+                completionStatus.put(user.getId(), status));
         dto.setCompletionStatus(completionStatus);
 
         return dto;
     }
 
-    /**
-     * Find tasks with fewer than 3 annotators
-     */
     @Transactional(readOnly = true)
     public List<TaskDto> getTasksWithFewerThanThreeAnnotators() {
         List<Task> tasks = taskRepo.findTasksWithFewerThanThreeAnnotators();
@@ -251,27 +246,22 @@ public class TaskService {
             dto.setText1(task.getText1());
             dto.setText2(task.getText2());
 
-            // Get all annotator IDs
             List<Long> annotatorIds = task.getAnnotators().stream()
                     .map(User::getId)
                     .collect(Collectors.toList());
             dto.setAnnotatorIds(annotatorIds);
 
-            // Get all annotations
             dto.setAnnotations(task.getAnnotations());
 
-            // Get completion status for all annotators
             Map<Long, Boolean> completionStatus = new HashMap<>();
-            task.getCompletionStatus().forEach((user, status) -> completionStatus.put(user.getId(), status));
+            task.getCompletionStatus().forEach((user, status) ->
+                    completionStatus.put(user.getId(), status));
             dto.setCompletionStatus(completionStatus);
 
             return dto;
         }).collect(Collectors.toList());
     }
 
-    /**
-     * Assign a task to an annotator
-     */
     @Transactional
     public TaskDto assignTaskToAnnotator(Long taskId, Long annotatorId) {
         Task task = taskRepo.findById(taskId)
@@ -279,7 +269,6 @@ public class TaskService {
         User annotator = userRepo.findById(annotatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Annotator not found"));
 
-        // Add the annotator to the task
         task.addAnnotator(annotator);
         task = taskRepo.save(task);
 

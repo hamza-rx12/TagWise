@@ -14,19 +14,15 @@ import com.nli.tagwise.models.User;
 import com.nli.tagwise.repository.IDatasetAnnotatorRepo;
 import com.nli.tagwise.repository.IDatasetRepo;
 import com.nli.tagwise.repository.ITaskRepo;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 import com.nli.tagwise.repository.IUserRepo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,16 +32,14 @@ public class DatasetService {
     private final IDatasetAnnotatorRepo datasetAnnotatorRepo;
     private final IUserRepo userRepo;
 
-    public DatasetService(IDatasetRepo datasetRepo, ITaskRepo taskRepo, IDatasetAnnotatorRepo datasetAnnotatorRepo,
-            IUserRepo userRepo) {
+    public DatasetService(IDatasetRepo datasetRepo, ITaskRepo taskRepo, IDatasetAnnotatorRepo datasetAnnotatorRepo, IUserRepo userRepo) {
         this.datasetRepo = datasetRepo;
         this.taskRepo = taskRepo;
         this.datasetAnnotatorRepo = datasetAnnotatorRepo;
         this.userRepo = userRepo;
     }
 
-    public Dataset saveDatasetFromCsv(MultipartFile file, String name, String classes, String description)
-            throws IOException {
+    public Dataset saveDatasetFromCsv(MultipartFile file, String name, String classes, String description) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             Dataset dataset = new Dataset();
             dataset.setName(name);
@@ -58,14 +52,9 @@ public class DatasetService {
 
             List<Task> tasks = new ArrayList<>();
             String line;
-            // int lineNumber = 0;
-
             while ((line = reader.readLine()) != null) {
-                // lineNumber++;
                 String[] columns = line.split("\t", -1);
-
-                if (columns.length < 2)
-                    continue;
+                if (columns.length < 2) continue;
 
                 Task task = new Task();
                 task.setDataset(savedDataset);
@@ -74,10 +63,8 @@ public class DatasetService {
                 task.setAnnotations(new ArrayList<>());
                 task.setAnnotators(new ArrayList<>());
                 task.setCompletionStatus(new HashMap<>());
-
                 tasks.add(task);
             }
-
             taskRepo.saveAll(tasks);
             return savedDataset;
         }
@@ -86,20 +73,30 @@ public class DatasetService {
     @Transactional
     public DatasetDto assignAnnotatorsToDataset(Long datasetId, List<Long> userIds) {
         Dataset dataset = getDatasetDetails(datasetId);
-
         List<User> users = userRepo.findAllById(userIds);
+
         if (users.size() != userIds.size()) {
             throw new IllegalArgumentException("One or more users not found");
         }
 
+        // Clear existing assignments for this dataset
+        datasetAnnotatorRepo.deleteByDataset(dataset);
+
+        // Create new assignments
         List<DatasetAnnotator> links = users.stream().map(user -> {
             DatasetAnnotator da = new DatasetAnnotator();
             da.setAnnotator(user);
             da.setDataset(dataset);
             return da;
         }).collect(Collectors.toList());
-
         datasetAnnotatorRepo.saveAll(links);
+
+        // Get all tasks for this dataset
+        List<Task> tasks = taskRepo.findByDataset(dataset);
+
+        // Divide tasks among annotators
+        divideTasksAmongAnnotators(tasks, users);
+        taskRepo.saveAll(tasks);
 
         // Map to DTO
         DatasetDto response = new DatasetDto();
@@ -107,6 +104,30 @@ public class DatasetService {
         response.setDescription(dataset.getDescription());
         response.setClasses(dataset.getClasses());
         return response;
+    }
+
+    private void divideTasksAmongAnnotators(List<Task> tasks, List<User> annotators) {
+        if (annotators.isEmpty() || tasks.isEmpty()) return;
+
+        // Clear existing assignments
+        tasks.forEach(task -> {
+            task.getAnnotators().clear();
+            task.getCompletionStatus().clear();
+        });
+
+        int tasksPerAnnotator = tasks.size() / annotators.size();
+        int extraTasks = tasks.size() % annotators.size();
+
+        int taskIndex = 0;
+        for (int i = 0; i < annotators.size(); i++) {
+            User annotator = annotators.get(i);
+            int tasksToAssign = tasksPerAnnotator + (i < extraTasks ? 1 : 0);
+
+            for (int j = 0; j < tasksToAssign && taskIndex < tasks.size(); j++) {
+                Task task = tasks.get(taskIndex++);
+                task.addAnnotator(annotator);
+            }
+        }
     }
 
     public List<Dataset> listDatasets() {
@@ -119,31 +140,23 @@ public class DatasetService {
     }
 
     public List<Task> getDatasetTasks(Long datasetId) {
-        // Dataset dataset = getDatasetDetails(datasetId);
         return taskRepo.findAll().stream()
                 .filter(task -> task.getDataset().getId().equals(datasetId))
                 .collect(Collectors.toList());
     }
 
     public List<DatasetAnnotator> getDatasetAnnotators(Long datasetId) {
-        Dataset dataset = datasetRepo.findById(datasetId)
-                .orElseThrow(() -> new IllegalArgumentException("Dataset not found"));
+        Dataset dataset = getDatasetDetails(datasetId);
         return datasetAnnotatorRepo.findByDataset(dataset);
     }
 
     public List<User> getUnassignedAnnotators(Long datasetId) {
         Dataset dataset = getDatasetDetails(datasetId);
-
-        // Get all annotators (users with ROLE_USER)
         List<User> allAnnotators = userRepo.findByRoleAndDeletedFalse(Role.ROLE_USER);
-
-        // Get assigned annotators for this dataset
         List<DatasetAnnotator> assignedLinks = datasetAnnotatorRepo.findByDataset(dataset);
         List<Long> assignedAnnotatorIds = assignedLinks.stream()
                 .map(link -> link.getAnnotator().getId())
                 .collect(Collectors.toList());
-
-        // Filter out assigned annotators
         return allAnnotators.stream()
                 .filter(annotator -> !assignedAnnotatorIds.contains(annotator.getId()))
                 .collect(Collectors.toList());
@@ -156,7 +169,6 @@ public class DatasetService {
         for (Long annotatorId : annotatorIds) {
             User annotator = userRepo.findById(annotatorId)
                     .orElseThrow(() -> new IllegalArgumentException("Annotator not found: " + annotatorId));
-
             try {
                 datasetAnnotatorRepo.deleteByDatasetAndAnnotator(dataset, annotator);
             } catch (Exception e) {
@@ -191,13 +203,11 @@ public class DatasetService {
         response.setCompletionPercentage(dataset.getCompletionPercentage());
         response.setTotalPairs(dataset.getTasks().size());
 
-        // Get sample pairs
         response.setSamplePairs(dataset.getTasks().stream()
                 .limit(5)
                 .map(task -> new TextPairDto(task.getId(), task.getText1(), task.getText2()))
                 .collect(Collectors.toList()));
 
-        // Get assigned annotators
         response.setAssignedAnnotators(dataset.getAnnotators().stream()
                 .map(da -> new AnnotatorDto(
                         da.getAnnotator().getId(),
