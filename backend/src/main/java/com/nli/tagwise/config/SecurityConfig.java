@@ -43,7 +43,7 @@ public class SecurityConfig {
                         // .requestMatchers("/api/users/**").hasRole("USER")
                         .requestMatchers("/api/annotators/**").hasRole("ADMIN")
                         // .requestMatchers("/api/annotators/recent").permitAll()
-                        .requestMatchers("/api/admin/datasets/**").hasRole("ADMIN")
+                        // .requestMatchers("/api/admin/datasets/**").hasRole("ADMIN")
                         // .requestMatchers("/api/tasks/**").hasRole("USER")
                         .anyRequest().authenticated())
                 // on desactive les sessions car on utilise JWT

@@ -170,17 +170,17 @@ export const authApi = {
 
 // ==================== Annotator API ====================
 export type Task = {
-    datasetId(datasetId: any): unknown;
-    completionStatus: any;
-    annotations: any;
-    text1: any;
-    text2: any;
-    metadata: any;
     id: string;
-    title: string;
-    description: string;
-    status: 'pending' | 'in_progress' | 'completed';
-    dueDate?: string;
+    datasetId: number;
+    text1: string;
+    text2: string;
+    annotations: string[];
+    completionStatus: Record<string, boolean>;
+    metadata: {
+        datasetName: string;
+        datasetClasses: string;
+        isNewAssignment: boolean;
+    };
 };
 
 export const annotatorApi = {
@@ -220,6 +220,13 @@ export const annotatorApi = {
             method: 'PATCH',
         });
         return handleResponse<void>(response);
+    },
+
+    updateTaskAnnotation: async (taskId: string, userId: string, annotation: string) => {
+        const response = await authenticatedFetch(`${TASKS_API}/${taskId}/annotate?annotatorId=${userId}&annotation=${encodeURIComponent(annotation)}`, {
+            method: 'POST',
+        });
+        return handleResponse<Task>(response);
     },
 };
 
@@ -294,7 +301,7 @@ export const adminApi = {
     },
 
     getDatasetById: async (id: string) => {
-        const response = await authenticatedFetch(`${ADMIN_API}/datasets/${id}`);
+        const response = await authenticatedFetch(`${ADMIN_API}/datasets/${id}/details`);
         return handleResponse<DatasetDetails>(response);
     },
 
