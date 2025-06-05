@@ -185,7 +185,7 @@ export type Task = {
 
 export const annotatorApi = {
     getTasks: async () => {
-        const response = await authenticatedFetch(`${TASKS_API}/2`);
+        const response = await authenticatedFetch(`${TASKS_API}/annotator/my-tasks`);
         return handleResponse<Task[]>(response);
     },
 

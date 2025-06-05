@@ -51,9 +51,9 @@ public class AppConfig {
         return args -> {
             // Check if an admin already exists
             boolean adminExists = userRepo.findByEmail("oumaima@gmail.com").isPresent();
+            boolean userExists = userRepo.findByEmail("hamza@gmail.com").isPresent();
             if (!adminExists) {
                 User admin = new User();
-                User user = new User();
 
                 admin.setFirstName("Oumaima");
                 admin.setLastName("OT");
@@ -64,6 +64,12 @@ public class AppConfig {
                 admin.setEnabled(true); // Enable the admin account
                 userRepo.save(admin);
                 System.out.println("Admin user created with email: oumaima@gmail.com");
+
+            } else {
+                System.out.println("Admin user already exists.");
+            }
+            if (!userExists) {
+                User user = new User();
 
                 user.setFirstName("hamza");
                 user.setLastName("al");
@@ -76,7 +82,7 @@ public class AppConfig {
                 System.out.println("Annotator user created with email: hamza@gmail.com");
 
             } else {
-                System.out.println("Admin user already exists.");
+                System.out.println("Normal user already exists.");
             }
         };
     }
